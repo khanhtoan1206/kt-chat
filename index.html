@@ -1,0 +1,3179 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khánh Toàn - Chat</title>
+<link rel="icon" type="image/png" href="logo.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+:root, [data-theme="light"] {
+  --bg-deep: #ede8ff;
+  --bg-mid: #e0d8f8;
+  --bg-panel: rgba(255,255,255,0.88);
+  --bg-card: rgba(255,255,255,0.97);
+  --bg-card2: rgba(245,240,255,0.95);
+  --purple-1: #7c3aed;
+  --purple-2: #9d4edd;
+  --purple-3: #6d28d9;
+  --accent: #8b5cf6;
+  --accent2: #a78bfa;
+  --pink: #ec4899;
+  --gold: #f59e0b;
+  --gold2: #d97706;
+  --green: #16a34a;
+  --cyan: #0891b2;
+  --text-1: #1e1040;
+  --text-2: #3d2a6e;
+  --text-3: #8775b8;
+  --border: rgba(124,58,237,0.15);
+  --border2: rgba(124,58,237,0.30);
+  --glow: 0 0 20px rgba(124,58,237,0.25);
+  --glow2: 0 0 30px rgba(124,58,237,0.2);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+  --shadow: 0 8px 32px rgba(80,40,180,0.12);
+  --sidebar-bg: rgba(255,255,255,0.78);
+  --panel-bg: rgba(250,247,255,0.82);
+  --input-bg: rgba(124,58,237,0.06);
+  --msg-received-bg: rgba(255,255,255,0.96);
+  --msg-received-border: rgba(124,58,237,0.14);
+  --header-bg: rgba(255,255,255,0.82);
+  --bottom-bg: rgba(255,255,255,0.82);
+  --scrollbar: #c4b5fd;
+  --voice-bg: rgba(30,16,80,0.82);
+}
+
+[data-theme="dark"] {
+  --bg-deep: #0a0618;
+  --bg-mid: #110d2a;
+  --bg-panel: rgba(15,10,35,0.82);
+  --bg-card: rgba(26,18,58,0.9);
+  --bg-card2: rgba(32,22,70,0.75);
+  --purple-1: #7c3aed;
+  --purple-2: #9d4edd;
+  --purple-3: #6d28d9;
+  --accent: #a855f7;
+  --accent2: #c084fc;
+  --pink: #ec4899;
+  --gold: #f59e0b;
+  --gold2: #fbbf24;
+  --green: #22c55e;
+  --cyan: #06b6d4;
+  --text-1: #f1f0ff;
+  --text-2: #c4b5fd;
+  --text-3: #8b7fbd;
+  --border: rgba(124,58,237,0.25);
+  --border2: rgba(168,85,247,0.4);
+  --glow: 0 0 20px rgba(124,58,237,0.4);
+  --glow2: 0 0 30px rgba(168,85,247,0.3);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 8px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --sidebar-bg: rgba(8,4,20,0.48);
+  --panel-bg: rgba(10,6,25,0.48);
+  --input-bg: rgba(255,255,255,0.06);
+  --msg-received-bg: rgba(26,18,58,0.88);
+  --msg-received-border: rgba(124,58,237,0.25);
+  --header-bg: rgba(8,4,20,0.42);
+  --bottom-bg: rgba(8,4,20,0.48);
+  --scrollbar: #6d28d9;
+  --voice-bg: rgba(20,12,50,0.92);
+}
+
+/* ===================== BASE ===================== */
+.nav-logo-wrap {
+  width:60px; height:60px; overflow:hidden; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+}
+.logo-img { width:100%; height:100%; object-fit:cover; display:block; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family:'Nunito',sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-1);
+  overflow: hidden;
+  height: 100vh;
+  position: relative;
+  transition: background .3s, color .3s;
+}
+
+[data-theme="dark"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(135deg, rgba(10,6,24,0.55) 0%, rgba(20,8,45,0.45) 50%, rgba(10,6,24,0.65) 100%),
+    url('ccccc.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+[data-theme="light"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(135deg, rgba(200,180,255,0.22) 0%, rgba(220,200,255,0.18) 50%, rgba(200,180,255,0.28) 100%),
+    url('ccccc.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  filter: brightness(1.08) saturate(0.9);
+}
+
+/* ===================== APP CONTAINER ===================== */
+.app-container {
+  display: grid;
+  grid-template-columns: 56px 300px 1fr 260px;
+  grid-template-rows: 1fr 80px;
+  height: 100vh;
+  position: relative;
+  z-index: 1;
+  gap: 0;
+  background: transparent;
+}
+
+/* ===================== SIDEBAR NAV ===================== */
+.sidebar-nav {
+  grid-row: 1/3;
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0;
+  gap: 4px;
+  z-index: 10;
+  transition: background .3s;
+}
+.nav-logo {
+  width:38px; height:38px;
+  background: linear-gradient(135deg, var(--purple-1), var(--accent));
+  border-radius: 10px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px;
+  color:#fff; margin-bottom:12px;
+  box-shadow: var(--glow);
+}
+.nav-item {
+  width:40px; height:40px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .2s; position:relative;
+  color: var(--text-3);
+}
+.nav-item:hover, .nav-item.active {
+  background: rgba(124,58,237,0.15);
+  color: var(--accent);
+}
+.nav-item.active::before {
+  content:''; position:absolute; left:-1px; top:50%; transform:translateY(-50%);
+  width:3px; height:22px; background:var(--accent); border-radius:0 3px 3px 0;
+}
+.nav-item svg { width:20px; height:20px; }
+.nav-bottom { margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:6px; }
+
+/* Theme toggle button */
+.theme-toggle {
+  width:36px; height:36px; border-radius:10px; border:1px solid var(--border2);
+  background:rgba(124,58,237,0.1); color:var(--accent); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px; transition:all .2s;
+}
+.theme-toggle:hover { background:rgba(124,58,237,0.2); transform:scale(1.08); }
+
+.nav-avatar {
+  width:38px; height:38px; border-radius:50%;
+  border:2px solid var(--purple-1); overflow:hidden; cursor:pointer;
+  position:relative;
+}
+.nav-avatar img { width:100%; height:100%; object-fit:cover; }
+.online-dot {
+  position:absolute; bottom:1px; right:1px;
+  width:10px; height:10px; background:var(--green);
+  border-radius:50%; border:2px solid var(--bg-deep);
+}
+.online-label { font-size:8px; color:var(--green); font-weight:700; letter-spacing:.5px; }
+
+/* ===================== CHAT LIST ===================== */
+.chat-list-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  transition: background .3s;
+}
+.chat-list-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+.brand-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.brand-name { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:15px; letter-spacing:.5px; color:var(--text-1); }
+.brand-sub { font-size:9px; color:var(--text-3); letter-spacing:1px; text-transform:uppercase; }
+.brand-icon { color:var(--text-3); cursor:pointer; }
+
+.search-bar {
+  display:flex; align-items:center; gap:8px;
+  background: var(--input-bg);
+  border:1px solid var(--border); border-radius:10px;
+  padding:7px 12px; margin-bottom:10px;
+  transition: background .3s;
+}
+.search-bar input {
+  background:none; border:none; outline:none;
+  color:var(--text-1); font-size:13px; width:100%;
+  font-family:'Nunito',sans-serif;
+}
+.search-bar input::placeholder { color:var(--text-3); }
+.search-bar svg { color:var(--text-3); width:15px; height:15px; flex-shrink:0; }
+
+.new-chat-btn {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  background: linear-gradient(135deg, var(--purple-1), var(--accent));
+  border:none; border-radius:10px; padding:9px;
+  color:#fff; font-weight:700; font-size:13px; letter-spacing:.5px;
+  cursor:pointer; width:100%; margin-bottom:10px;
+  font-family:'Nunito',sans-serif;
+  box-shadow: 0 4px 15px rgba(124,58,237,0.35);
+  transition:all .2s;
+}
+.new-chat-btn:hover { box-shadow: 0 6px 20px rgba(124,58,237,0.55); transform:translateY(-1px); }
+
+.filter-tabs { display:flex; gap:4px; }
+.tab-btn {
+  padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600;
+  background:transparent; border:none; color:var(--text-3); cursor:pointer;
+  font-family:'Nunito',sans-serif; transition:all .2s;
+}
+.tab-btn.active {
+  background:linear-gradient(135deg, var(--purple-1), var(--purple-2));
+  color:#fff; box-shadow: 0 2px 10px rgba(124,58,237,0.35);
+}
+
+.chat-list-body { flex:1; overflow-y:auto; padding:8px 0; }
+.chat-list-body::-webkit-scrollbar { width:3px; }
+.chat-list-body::-webkit-scrollbar-thumb { background:var(--scrollbar); border-radius:3px; }
+
+.section-label {
+  font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+  color:var(--text-3); padding:6px 16px 4px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.section-label svg { width:12px; height:12px; }
+
+.chat-item {
+  display:flex; align-items:center; gap:10px; padding:8px 14px;
+  cursor:pointer; transition:all .15s; border-radius:10px; margin:0 6px;
+  position:relative;
+}
+.chat-item:hover { background:rgba(124,58,237,0.09); }
+.chat-item.active { background:rgba(124,58,237,0.14); }
+
+.chat-avatar { width:42px; height:42px; border-radius:50%; overflow:hidden; flex-shrink:0; position:relative; }
+.chat-avatar img { width:100%; height:100%; object-fit:cover; }
+.chat-avatar .avatar-text {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:15px; background:linear-gradient(135deg,var(--purple-1),var(--pink));
+}
+.chat-info { flex:1; min-width:0; }
+.chat-name { font-size:13px; font-weight:700; color:var(--text-1); margin-bottom:2px; }
+.chat-preview { font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat-meta { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.chat-time { font-size:10px; color:var(--text-3); }
+.chat-badge {
+  background:var(--accent); color:#fff; font-size:10px; font-weight:700;
+  border-radius:50%; width:18px; height:18px; display:flex; align-items:center;
+  justify-content:center; min-width:18px;
+}
+.chat-badge.yellow { background:var(--gold); }
+.vip-badge {
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#fff; font-size:9px; font-weight:800; padding:1px 5px;
+  border-radius:4px; letter-spacing:.5px;
+}
+[data-theme="light"] .vip-badge { color:#7a4800; }
+
+.promo-banner {
+  margin:8px 10px; border-radius:12px; overflow:hidden;
+  background:linear-gradient(135deg,rgba(26,10,58,0.9),rgba(45,16,96,0.9));
+  border:1px solid rgba(168,85,247,0.3);
+  padding:12px; position:relative;
+}
+.promo-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:16px; color:var(--gold2); }
+.promo-sub { font-size:10px; color:rgba(255,255,255,0.7); margin-bottom:8px; }
+.promo-btn {
+  background:linear-gradient(135deg,var(--gold),#e67e00);
+  color:#fff; font-size:10px; font-weight:800; padding:5px 14px;
+  border-radius:6px; border:none; cursor:pointer; font-family:'Nunito',sans-serif;
+  letter-spacing:.5px;
+}
+.promo-img { position:absolute; right:8px; top:50%; transform:translateY(-50%); }
+.promo-img img { width:70px; height:auto; display:block; }
+
+/* ===================== CHAT MAIN ===================== */
+.chat-main { display:flex; flex-direction:column; background:transparent; overflow:hidden; position:relative; }
+
+.chat-header {
+  display:flex; align-items:center; gap:12px; padding:12px 20px;
+  background: var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom:1px solid var(--border);
+  transition: background .3s;
+}
+.chat-header-avatar { width:38px; height:38px; border-radius:50%; overflow:hidden; }
+.chat-header-avatar img { width:100%; height:100%; object-fit:cover; }
+.chat-header-info .name { font-weight:700; font-size:14px; color:var(--text-1); }
+.chat-header-info .status { font-size:11px; color:var(--green); display:flex; align-items:center; gap:4px; }
+.status-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.5} }
+.chat-header-actions { margin-left:auto; display:flex; gap:4px; }
+.header-btn {
+  width:36px; height:36px; border-radius:10px; border:none;
+  background:rgba(124,58,237,0.08); color:var(--text-2); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:all .2s;
+}
+.header-btn:hover { background:rgba(124,58,237,0.18); color:var(--accent); }
+.header-btn svg { width:18px; height:18px; }
+
+.messages-area {
+  flex:1; overflow-y:auto; padding:16px 20px;
+  display:flex; flex-direction:column; gap:10px;
+  position:relative;
+  background:
+    linear-gradient(to bottom, rgba(8,4,22,0.52) 0%, rgba(8,4,22,0.42) 50%, rgba(8,4,22,0.65) 100%),
+    url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1600&q=80') center/cover no-repeat fixed;
+}
+[data-theme="light"] .messages-area {
+  background:
+    linear-gradient(to bottom, rgba(60,20,140,0.22) 0%, rgba(60,20,140,0.12) 50%, rgba(60,20,140,0.28) 100%),
+    url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1600&q=80') center/cover no-repeat fixed;
+}
+.messages-area::-webkit-scrollbar { width:3px; }
+.messages-area::-webkit-scrollbar-thumb { background:var(--scrollbar); border-radius:3px; }
+
+.date-divider {
+  text-align:center; font-size:11px; color:var(--text-3);
+  font-weight:600; letter-spacing:.5px; padding:4px 0;
+}
+
+.msg-row { display:flex; gap:8px; align-items:flex-end; max-width:75%; }
+.msg-row.sent { margin-left:auto; flex-direction:row-reverse; }
+
+.msg-avatar { width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0; }
+.msg-avatar img { width:100%; height:100%; object-fit:cover; }
+
+.msg-bubble {
+  background: var(--msg-received-bg);
+  border:1px solid var(--msg-received-border);
+  border-radius:16px 16px 16px 4px;
+  padding:10px 14px; font-size:13px; color:var(--text-1);
+  position:relative;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: background .3s;
+}
+.msg-row.sent .msg-bubble {
+  background:linear-gradient(135deg, rgba(109,40,217,0.82), rgba(139,92,246,0.75));
+  border-color:rgba(168,85,247,0.4);
+  border-radius:16px 16px 4px 16px;
+  color:#fff;
+}
+[data-theme="light"] .msg-row.sent .msg-bubble {
+  background:linear-gradient(135deg, #7c3aed, #9d4edd);
+  border-color: rgba(124,58,237,0.5);
+  color:#fff;
+}
+.msg-time {
+  font-size:10px; color:var(--text-3); margin-top:4px; display:flex; align-items:center; gap:3px;
+}
+.msg-row.sent .msg-time { justify-content:flex-end; }
+.check-icon { color:var(--cyan); font-size:12px; }
+
+/* Product card */
+.product-card {
+  background:rgba(10,6,24,0.85); border:1px solid var(--border);
+  border-radius:12px; overflow:hidden; margin-top:6px; min-width:200px;
+}
+[data-theme="light"] .product-card { background:rgba(240,235,255,0.95); }
+.product-img { width:100%; height:100px; object-fit:cover; background:linear-gradient(135deg,#1a0a3a,#2d1060); display:flex; align-items:center; justify-content:center; font-size:40px; }
+.product-info { padding:8px 10px; }
+.product-name { font-size:12px; font-weight:700; color:var(--text-1); margin-bottom:4px; }
+.product-price { font-size:16px; font-weight:800; color:var(--gold); }
+[data-theme="light"] .product-price { color:#c77700; }
+.add-to-cart-btn {
+  background:linear-gradient(135deg,var(--purple-1),var(--accent));
+  color:#fff; font-size:11px; font-weight:700; border:none; border-radius:7px;
+  padding:5px 12px; cursor:pointer; font-family:'Nunito',sans-serif;
+  margin-top:6px; transition:all .2s;
+}
+.add-to-cart-btn:hover { box-shadow: 0 4px 12px rgba(124,58,237,0.5); }
+
+/* ===================== VOICE MESSAGE ===================== */
+/* Kiểu mới: pill tối với nút play tròn màu tím + waveform + thời gian */
+.voice-msg {
+  display:flex; align-items:center; gap:10px;
+  background: rgba(26,12,60,0.88);
+  border-radius:28px;
+  padding:8px 14px 8px 8px;
+  min-width:190px;
+  box-shadow: 0 2px 12px rgba(80,20,180,0.25);
+}
+[data-theme="light"] .voice-msg {
+  background: rgba(80,20,180,0.82);
+}
+.play-btn {
+  width:38px; height:38px; border-radius:50%;
+  background:linear-gradient(135deg, var(--purple-1), var(--accent));
+  border:none; color:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+  box-shadow: 0 2px 10px rgba(124,58,237,0.5);
+  font-size:15px;
+  transition:transform .15s;
+}
+.play-btn:hover { transform:scale(1.08); }
+.voice-wave { flex:1; height:30px; display:flex; align-items:center; gap:2.5px; }
+.voice-bar {
+  width:3px; background:rgba(200,170,255,0.7); border-radius:3px;
+  animation:wave 1.3s ease-in-out infinite;
+  transition: background .2s;
+}
+.voice-bar:nth-child(1)  { height:10px; animation-delay:0s; }
+.voice-bar:nth-child(2)  { height:20px; animation-delay:.1s; }
+.voice-bar:nth-child(3)  { height:14px; animation-delay:.2s; }
+.voice-bar:nth-child(4)  { height:24px; animation-delay:.05s; }
+.voice-bar:nth-child(5)  { height:16px; animation-delay:.15s; }
+.voice-bar:nth-child(6)  { height:28px; animation-delay:.25s; }
+.voice-bar:nth-child(7)  { height:18px; animation-delay:.08s; }
+.voice-bar:nth-child(8)  { height:22px; animation-delay:.18s; }
+.voice-bar:nth-child(9)  { height:12px; animation-delay:.3s; }
+.voice-bar:nth-child(10) { height:26px; animation-delay:.12s; }
+.voice-bar:nth-child(11) { height:16px; animation-delay:.22s; }
+.voice-bar:nth-child(12) { height:20px; animation-delay:.06s; }
+@keyframes wave { 0%,100%{opacity:.35;transform:scaleY(.7)} 50%{opacity:1;transform:scaleY(1)} }
+.voice-duration { font-size:12px; color:rgba(220,200,255,0.95); font-weight:600; min-width:30px; text-align:right; }
+
+/* Received voice message - slightly different look */
+.msg-row:not(.sent) .voice-msg {
+  background: rgba(26,12,60,0.75);
+}
+
+/* File attachment */
+.file-msg {
+  display:flex; align-items:center; gap:10px;
+  background:var(--input-bg); border:1px solid var(--border);
+  border-radius:10px; padding:8px 12px; margin-top:4px;
+}
+.file-icon { font-size:24px; }
+.file-info .file-name { font-size:12px; font-weight:700; color:var(--text-1); }
+.file-info .file-size { font-size:10px; color:var(--text-3); }
+.file-download { color:var(--accent); cursor:pointer; font-size:18px; }
+
+/* Typing indicator */
+.typing-indicator { display:flex; gap:4px; align-items:center; padding:4px 8px; font-size:12px; color:var(--text-3); }
+.typing-dots span {
+  display:inline-block; width:6px; height:6px; border-radius:50%;
+  background:var(--text-3); animation:bounce 1.2s infinite; margin:0 1px;
+}
+.typing-dots span:nth-child(2) { animation-delay:.2s; }
+.typing-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+/* Input bar */
+.input-bar {
+  display:flex; align-items:center; gap:10px; padding:12px 16px;
+  background:var(--header-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top:1px solid var(--border);
+  transition: background .3s;
+}
+.plus-btn {
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg,var(--purple-1),var(--accent));
+  border:none; color:#fff; cursor:pointer; font-size:20px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.35); transition:all .2s;
+}
+.plus-btn:hover { transform:scale(1.08); }
+.input-wrap {
+  flex:1; display:flex; align-items:center; gap:8px;
+  background:var(--input-bg); border:1px solid var(--border);
+  border-radius:22px; padding:8px 16px;
+  transition: background .3s;
+}
+.input-wrap input {
+  flex:1; background:none; border:none; outline:none;
+  color:var(--text-1); font-size:13px; font-family:'Nunito',sans-serif;
+}
+.input-wrap input::placeholder { color:var(--text-3); }
+.input-action-btns { display:flex; gap:6px; }
+.input-btn { background:none; border:none; color:var(--text-3); cursor:pointer; transition:color .2s; display:flex; align-items:center; }
+.input-btn:hover { color:var(--accent); }
+.input-btn svg { width:18px; height:18px; }
+.mic-btn { transition: color .2s, transform .2s; }
+.mic-btn.recording { color: #ef4444 !important; animation: mic-pulse 1s ease-in-out infinite; }
+@keyframes mic-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.25)} }
+
+.send-btn {
+  width:36px; height:36px; border-radius:50%;
+  background:linear-gradient(135deg,var(--purple-1),var(--accent));
+  border:none; color:#fff; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  box-shadow: 0 4px 12px rgba(124,58,237,0.35); transition:all .2s;
+}
+.send-btn:hover { transform:scale(1.08); box-shadow: 0 6px 18px rgba(124,58,237,0.55); }
+.send-btn svg { width:16px; height:16px; }
+
+/* ===================== VOICE OVERLAY ===================== */
+.voice-overlay {
+  position:fixed; inset:0; z-index:8000;
+  background: rgba(5,2,15,0.78);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .3s;
+}
+.voice-overlay.active { opacity:1; pointer-events:all; }
+.voice-overlay-inner { text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px; }
+.voice-rings { position:relative; width:120px; height:120px; display:flex; align-items:center; justify-content:center; }
+.voice-ring {
+  position:absolute; border-radius:50%; border:2px solid var(--accent);
+  animation:voice-ring-expand 1.8s ease-out infinite;
+}
+.voice-ring.r1 { width:80px; height:80px; animation-delay:0s; opacity:.7; }
+.voice-ring.r2 { width:100px; height:100px; animation-delay:.4s; opacity:.5; }
+.voice-ring.r3 { width:120px; height:120px; animation-delay:.8s; opacity:.3; }
+@keyframes voice-ring-expand { 0%{transform:scale(.6);opacity:.8} 100%{transform:scale(1.2);opacity:0} }
+.voice-mic-icon {
+  width:64px; height:64px; background:linear-gradient(135deg,var(--purple-1),var(--accent));
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 30px rgba(168,85,247,0.6); z-index:2;
+  animation:mic-glow 1.2s ease-in-out infinite;
+}
+@keyframes mic-glow { 0%,100%{box-shadow:0 0 20px rgba(168,85,247,.5)} 50%{box-shadow:0 0 45px rgba(168,85,247,.9)} }
+.voice-overlay-text {
+  font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700; color:#fff;
+  max-width:300px; line-height:1.3; min-height:60px;
+  display:flex; align-items:center; justify-content:center;
+}
+.voice-overlay-hint { font-size:12px; color:rgba(200,180,255,.8); letter-spacing:.5px; }
+.voice-cancel-btn {
+  background:rgba(255,255,255,.08); border:1px solid rgba(168,85,247,.4);
+  color:rgba(200,180,255,.9); padding:8px 24px; border-radius:20px;
+  cursor:pointer; font-size:13px; font-family:'Nunito',sans-serif; font-weight:600; transition:all .2s;
+}
+.voice-cancel-btn:hover { background:rgba(255,255,255,.15); }
+
+/* ===================== RIGHT PANEL ===================== */
+.right-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-left:1px solid var(--border);
+  display:flex; flex-direction:column; overflow:hidden; gap:0;
+  transition: background .3s;
+}
+
+/* Profile card */
+.profile-card { background:rgba(18,12,40,.50); border-bottom:1px solid var(--border); overflow:hidden; position:relative; flex-shrink:0; }
+[data-theme="light"] .profile-card { background:rgba(245,240,255,0.7); }
+
+.profile-bg {
+  width:100%; height:120px;
+  background-image:
+    linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(18,12,40,.85) 100%),
+    url('https://dynamic-media-cdn.tripadvisor.com/media/photo-o/17/a2/f4/1c/stadio-santiago-bernabeu.jpg?w=900&h=500&s=1');
+  background-size:cover; background-position:center 30%; position:relative; z-index:1;
+}
+[data-theme="light"] .profile-bg {
+  background-image:
+    linear-gradient(to bottom, rgba(100,60,200,.15) 0%, rgba(200,180,255,.6) 100%),
+    url('https://dynamic-media-cdn.tripadvisor.com/media/photo-o/17/a2/f4/1c/stadio-santiago-bernabeu.jpg?w=900&h=500&s=1');
+}
+
+.close-panel-btn {
+  position:absolute; top:10px; right:10px; z-index:10;
+  background:rgba(0,0,0,.55); border:none; color:white;
+  width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:13px;
+  display:flex; align-items:center; justify-content:center; transition:background .2s;
+}
+.close-panel-btn:hover { background:rgba(0,0,0,.8); }
+
+.profile-avatar-wrap { position:relative; width:72px; height:72px; margin:-36px auto 8px; z-index:5; }
+.profile-avatar-wrap img {
+  width:100%; height:100%; object-fit:cover; border-radius:50%;
+  border:3px solid var(--purple-1); box-shadow:0 0 16px rgba(124,58,237,0.5); display:block;
+}
+.profile-online-dot {
+  position:absolute; bottom:3px; right:3px; width:15px; height:15px;
+  background:var(--green); border-radius:50%; border:3px solid rgba(18,12,40,0.95); z-index:6;
+}
+[data-theme="light"] .profile-online-dot { border-color:rgba(240,235,255,0.95); }
+
+.profile-info { text-align:center; padding:0 12px 12px; }
+.profile-name { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:var(--text-1); margin-bottom:2px; }
+.profile-role { font-size:11px; color:var(--gold); font-weight:700; margin-bottom:2px; }
+[data-theme="light"] .profile-role { color:#b45309; }
+.profile-since { font-size:10px; color:var(--text-3); }
+
+.profile-stats { display:flex; gap:0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-top:8px; }
+.stat-item { flex:1; text-align:center; padding:8px 4px; }
+.stat-item:not(:last-child) { border-right:1px solid var(--border); }
+.stat-label { font-size:9px; color:var(--text-3); font-weight:600; letter-spacing:.5px; text-transform:uppercase; margin-bottom:2px; }
+.stat-value { font-size:14px; font-weight:800; color:var(--text-1); }
+
+.view-profile-btn {
+  display:block; width:calc(100% - 24px); margin:10px 12px;
+  background:rgba(124,58,237,0.1); border:1px solid var(--border2);
+  color:var(--text-1); font-size:12px; font-weight:700; padding:8px;
+  border-radius:8px; cursor:pointer; font-family:'Nunito',sans-serif;
+  transition:all .2s; text-align:center;
+}
+.view-profile-btn:hover { background:rgba(124,58,237,0.22); }
+
+/* Quick actions */
+.quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); }
+.action-card {
+  background:rgba(32,22,70,.7); border:1px solid var(--border);
+  border-radius:10px; padding:10px 8px; text-align:center; cursor:pointer; transition:all .2s;
+}
+[data-theme="light"] .action-card { background:rgba(124,58,237,0.07); }
+.action-card:hover { background:rgba(124,58,237,.18); border-color:var(--border2); transform:translateY(-2px); }
+.action-icon { font-size:22px; margin-bottom:4px; }
+.action-label { font-size:10px; color:var(--text-2); font-weight:600; }
+
+/* Video call widget (mini, in right panel) */
+.video-widget { margin:10px 12px; border-radius:12px; overflow:hidden; background:#000; border:1px solid var(--border); position:relative; flex-shrink:0; }
+.video-header {
+  position:absolute; top:0; left:0; right:0;
+  display:flex; align-items:center; gap:6px; padding:8px 10px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent); z-index:5; font-size:12px; font-weight:600; color:#fff;
+}
+.video-dot { width:8px; height:8px; border-radius:50%; background:var(--pink); }
+.video-timer { margin-left:auto; font-size:11px; color:rgba(200,180,255,.9); }
+.video-main { width:100%; height:140px; background:linear-gradient(135deg,#1a0838,#0a1a2e); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+#remoteVideo, #localVideo { width:100%; height:100%; object-fit:cover; background:linear-gradient(135deg,#1a0838,#0a1a2e); }
+.video-thumb { position:absolute; bottom:8px; right:8px; width:56px; height:56px; border-radius:8px; overflow:hidden; border:2px solid var(--purple-1); z-index:3; background:linear-gradient(135deg,#2d1060,#0f2040); }
+.video-controls { display:flex; align-items:center; justify-content:center; gap:10px; padding:10px; background:rgba(0,0,0,.8); }
+.v-btn { width:36px; height:36px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; transition:all .2s; background:rgba(255,255,255,.12); }
+.v-btn:hover { background:rgba(255,255,255,.22); }
+.v-btn.end { background:#ef4444; }
+.v-btn.end:hover { background:#dc2626; }
+.v-btn svg { width:16px; height:16px; color:#fff; }
+
+/* ===================== BOTTOM BAR ===================== */
+.bottom-bar {
+  grid-column:2/5;
+  background: var(--bottom-bg);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);
+  display:flex; align-items:center; padding:0 20px; gap:0;
+  transition: background .3s;
+}
+.bottom-section { flex:1; display:flex; align-items:center; gap:12px; padding:0 12px; }
+.bottom-section:not(:last-child) { border-right:1px solid var(--border); }
+
+.stadium-thumb { width:60px; height:50px; border-radius:8px; overflow:hidden; flex-shrink:0; }
+.stadium-thumb img { width:100%; height:100%; object-fit:cover; opacity:.75; }
+.bottom-tagline-main { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; }
+[data-theme="light"] .bottom-tagline-main { color:#b45309; }
+.bottom-tagline-sub { font-size:10px; color:var(--text-3); }
+
+.countdown-section { justify-content:center; }
+.countdown-badge {
+  width:44px; height:44px; background:linear-gradient(135deg,var(--purple-1),var(--accent));
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:11px; color:#fff;
+  flex-shrink:0; box-shadow:var(--glow);
+}
+.match-info { text-align:center; }
+.match-label { font-size:9px; color:var(--text-3); text-transform:uppercase; letter-spacing:1px; }
+.countdown-timer { display:flex; align-items:center; gap:4px; }
+.countdown-num { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; color:var(--text-1); min-width:30px; text-align:center; }
+.countdown-sep { font-size:20px; color:var(--accent); font-weight:700; }
+.match-day { font-size:10px; color:var(--text-3); }
+.ball-icon { font-size:28px; }
+.weather-section { justify-content:flex-end; }
+.weather-temp { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; color:var(--text-1); }
+.weather-desc { font-size:10px; color:var(--text-3); }
+.weather-icon { font-size:30px; }
+
+/* ===================== MODALS ===================== */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  backdrop-filter:blur(10px); z-index:1000;
+  display:none; align-items:center; justify-content:center;
+}
+.modal-overlay.active { display:flex; }
+
+.call-modal {
+  background:var(--bg-card); border:1px solid var(--border2);
+  border-radius:20px; padding:32px; text-align:center; min-width:280px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5),var(--glow2);
+}
+.call-avatar-ring {
+  width:80px; height:80px; border-radius:50%; overflow:hidden;
+  margin:0 auto 12px; border:3px solid var(--accent);
+  animation:ring-pulse 1.5s ease-in-out infinite;
+}
+@keyframes ring-pulse {
+  0%,100%{box-shadow:0 0 0 0 rgba(168,85,247,.4),0 0 0 8px rgba(168,85,247,.15)}
+  50%{box-shadow:0 0 0 8px rgba(168,85,247,.15),0 0 0 20px rgba(168,85,247,0)}
+}
+.call-avatar-ring img { width:100%; height:100%; object-fit:cover; }
+.call-name { font-size:20px; font-weight:700; margin-bottom:4px; color:var(--text-1); }
+.call-type { font-size:13px; color:var(--text-3); margin-bottom:24px; }
+.call-btns { display:flex; gap:20px; justify-content:center; }
+.call-accept,.call-reject {
+  width:56px; height:56px; border-radius:50%; border:none; cursor:pointer;
+  font-size:22px; display:flex; align-items:center; justify-content:center; transition:all .2s;
+}
+.call-accept { background:#22c55e; box-shadow:0 4px 20px rgba(34,197,94,.4); }
+.call-accept:hover { transform:scale(1.1); }
+.call-reject { background:#ef4444; box-shadow:0 4px 20px rgba(239,68,68,.4); }
+.call-reject:hover { transform:scale(1.1); }
+
+/* ===================== FULLSCREEN VIDEO CALL ===================== */
+/* Thiết kế mới giống ảnh 2 */
+.video-fullscreen {
+  position:fixed; inset:0; background:#0a0618; z-index:2000;
+  display:none; flex-direction:column;
+}
+.video-fullscreen.active { display:flex; }
+
+/* Ronaldo background image for call */
+.vfs-bg-image {
+  position:absolute; inset:0; z-index:0;
+  background: url('https://images2.thanhnien.vn/528068263637045248/2026/3/7/ronaldo-dang-no-luc-de-co-the-trang-tot-nhat-cho-world-cup-2026-17728513753901155052363.jpg') center/cover no-repeat;
+  filter: brightness(0.55) saturate(1.2);
+  transition: opacity .5s;
+}
+.vfs-bg-overlay {
+  position:absolute; inset:0; z-index:1;
+  background: radial-gradient(ellipse 80% 80% at 50% 40%, rgba(20,10,60,0.35) 0%, rgba(5,2,18,0.75) 100%);
+}
+
+/* Caller avatar shown when no remote video */
+.vfs-caller-info {
+  position:absolute; z-index:5;
+  top:50%; left:50%; transform:translate(-50%,-65%);
+  text-align:center;
+  transition:opacity .4s;
+}
+.vfs-caller-avatar {
+  width:100px; height:100px; border-radius:50%;
+  margin:0 auto 14px;
+  border:4px solid rgba(168,85,247,.7);
+  background: linear-gradient(135deg,#ec4899,#f59e0b);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:36px; color:#fff;
+  box-shadow: 0 0 40px rgba(168,85,247,0.5), 0 0 0 0 rgba(168,85,247,0.4);
+  animation: caller-pulse 2s ease-in-out infinite;
+  overflow:hidden;
+}
+.vfs-caller-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+@keyframes caller-pulse {
+  0%,100%{box-shadow:0 0 40px rgba(168,85,247,0.5),0 0 0 0 rgba(168,85,247,.4)}
+  50%{box-shadow:0 0 50px rgba(168,85,247,0.7),0 0 0 18px rgba(168,85,247,0)}
+}
+.vfs-caller-name {
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:26px; color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,0.8); margin-bottom:5px;
+}
+.vfs-caller-status {
+  font-size:14px; color:rgba(255,255,255,.65); font-weight:500;
+}
+
+/* Top bar - Active Call style */
+.vfs-top-bar {
+  position:absolute; top:0; left:0; right:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+}
+.vfs-call-status {
+  display:flex; align-items:center; gap:7px;
+  font-size:13px; font-weight:700; color:#fff;
+}
+.vfs-active-dot {
+  width:9px; height:9px; border-radius:50%; background:#4ade80;
+  box-shadow: 0 0 8px #4ade80;
+  animation: vfs-blink 1.5s ease-in-out infinite;
+}
+@keyframes vfs-blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+.vfs-top-right {
+  display:flex; align-items:center; gap:10px;
+  font-size:13px; font-weight:700; color:#fff;
+}
+.vfs-signal { font-size:12px; opacity:.8; }
+
+/* Main video area */
+.video-fs-main {
+  flex:1; position:relative; overflow:hidden;
+  background:#0a0618;
+}
+#fsRemoteVideo {
+  position:absolute; inset:0;
+  width:100%; height:100%; object-fit:cover;
+  z-index:3;
+  background:transparent;
+}
+
+/* Self camera - bottom right (stays on top always) */
+#fsLocalVideo {
+  position:absolute; bottom:90px; right:18px;
+  width:130px; height:175px; border-radius:18px;
+  object-fit:cover; border:2.5px solid var(--purple-1);
+  background:linear-gradient(135deg,#2d1060,#0f2040);
+  box-shadow:0 8px 28px rgba(0,0,0,0.7);
+  z-index:15;
+}
+
+/* Bottom controls - like image 2 */
+.video-fs-controls {
+  position:absolute; bottom:0; left:0; right:0; z-index:20;
+  display:flex; align-items:center; justify-content:center; gap:16px;
+  padding:18px 20px 36px;
+  background:linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+.fs-ctrl-item { display:flex; flex-direction:column; align-items:center; gap:7px; }
+.fs-ctrl-label { font-size:11px; color:rgba(255,255,255,0.85); font-weight:600; letter-spacing:.3px; }
+.fs-btn {
+  width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(60,50,80,0.75); color:#fff; transition:all .2s;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.fs-btn:hover { background:rgba(100,80,140,.8); transform:scale(1.07); }
+.fs-btn.active-red { background:rgba(239,68,68,0.85); border-color:rgba(239,68,68,.5); }
+.fs-btn.end-call { background:#ef4444; width:62px; height:62px; border:none; box-shadow:0 4px 20px rgba(239,68,68,.5); }
+.fs-btn.end-call:hover { background:#dc2626; transform:scale(1.08); }
+.fs-btn svg { width:22px; height:22px; }
+
+/* Toast */
+.toast {
+  position:fixed; top:20px; right:20px; z-index:9999;
+  background:var(--bg-card); border:1px solid var(--border2);
+  border-radius:10px; padding:12px 16px; font-size:13px; color:var(--text-1);
+  box-shadow:var(--shadow); transform:translateX(120%); transition:transform .3s;
+}
+.toast.show { transform:translateX(0); }
+
+/* File preview */
+.file-preview-bar {
+  display:none; align-items:center; gap:8px;
+  padding:6px 16px; background:rgba(124,58,237,0.08);
+  border-top:1px solid var(--border); font-size:12px; color:var(--text-2);
+}
+.file-preview-bar.show { display:flex; }
+.file-preview-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.file-preview-remove { background:none; border:none; color:var(--text-3); cursor:pointer; font-size:16px; }
+
+/* ===================== LOGIN SCREEN ===================== */
+.login-screen {
+  position:fixed; inset:0; z-index:9999;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+
+/* Full-cover background image ccccc.jpg */
+.login-bg {
+  position:absolute; inset:0; z-index:0;
+  background: url('ccccc.jpg') center center / cover no-repeat;
+  transform: scale(1.04);
+  filter: brightness(1.08) saturate(1.25);
+  transition: transform 8s ease;
+  animation: subtle-zoom 12s ease-in-out infinite alternate;
+}
+@keyframes subtle-zoom {
+  0%   { transform: scale(1.0); }
+  100% { transform: scale(1.07); }
+}
+
+.login-bg-stadium {
+  position:absolute; inset:0; z-index:1;
+  /* Removed — ccccc.jpg is now the main bg */
+  display: none;
+}
+.login-bg-overlay {
+  position:absolute; inset:0; z-index:2;
+  background:
+    radial-gradient(ellipse 100% 80% at 50% 0%,   rgba(80,30,200,.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70%  80% at 10% 55%,  rgba(236,72,153,.18) 0%, transparent 50%),
+    radial-gradient(ellipse 70%  80% at 90% 55%,  rgba(124,58,237,.22) 0%, transparent 50%),
+    radial-gradient(ellipse 110% 110% at 50% 50%, rgba(8,4,20,.48)  0%, rgba(8,4,20,.72) 100%);
+}
+
+/* Floating particles */
+.login-particles { position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden; }
+.particle {
+  position:absolute; border-radius:50%;
+  animation:float-particle linear infinite;
+  opacity:0;
+}
+@keyframes float-particle {
+  0%{transform:translateY(100vh) scale(0);opacity:0}
+  10%{opacity:.8}
+  90%{opacity:.4}
+  100%{transform:translateY(-100px) scale(1);opacity:0}
+}
+
+/* Left side info panels */
+.login-side-info {
+  position:absolute; z-index:5; display:flex; flex-direction:column; gap:12px;
+  pointer-events:none;
+}
+.login-side-info.left { left:5%; top:50%; transform:translateY(-50%); }
+.login-side-info.right { right:5%; top:50%; transform:translateY(-50%); }
+.side-info-card {
+  background:rgba(14,8,42,.55); border:1px solid rgba(200,160,255,.18);
+  border-radius:16px; padding:14px 18px; backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  min-width:170px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4), 0 0 20px rgba(120,50,220,.12) inset;
+}
+.side-weather { font-size:30px; font-weight:800; color:#f1f0ff; font-family:'Rajdhani',sans-serif; text-shadow:0 0 20px rgba(200,170,255,.4); }
+.side-weather-desc { font-size:11px; color:rgba(200,180,255,.65); margin-top:4px; line-height:1.5; }
+
+/* Bottom bar visible behind card */
+.login-bottom-bar {
+  position:absolute; bottom:0; left:0; right:0; z-index:5;
+  height:66px; background:rgba(6,3,18,.82); backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(168,85,247,.2);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 32px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.5);
+}
+.lbb-left { display:flex; align-items:center; gap:10px; }
+.lbb-avatar { width:32px; height:32px; border-radius:50%; border:2px solid var(--purple-1); overflow:hidden; }
+.lbb-avatar img { width:100%; height:100%; object-fit:cover; }
+.lbb-online { font-size:10px; color:var(--green); font-weight:700; letter-spacing:.8px; }
+.lbb-center { text-align:center; }
+.lbb-match-label { font-size:9px; color:rgba(200,180,255,.5); letter-spacing:1px; margin-bottom:4px; }
+.lbb-countdown { display:flex; align-items:baseline; gap:6px; justify-content:center; }
+.lbb-num { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; color:#f1f0ff; }
+.lbb-sep { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; color:var(--accent2); }
+.lbb-unit { font-size:8px; color:rgba(200,180,255,.5); text-align:center; display:block; line-height:1; margin-top:1px; }
+.lbb-right { display:flex; align-items:center; gap:8px; }
+.lbb-weather-temp { font-size:16px; font-weight:700; font-family:'Rajdhani',sans-serif; color:#f1f0ff; }
+.lbb-weather-desc { font-size:9px; color:rgba(200,180,255,.5); }
+.lbb-stadium-icon { font-size:24px; }
+
+/* ==== AUTH CARD ==== */
+.auth-wrapper {
+  position:relative; z-index:10;
+  width:420px; margin-bottom:30px;
+  filter: drop-shadow(0 0 36px rgba(130,60,250,.38));
+}
+
+/* Tab switcher */
+.auth-tabs {
+  display:flex; margin-bottom:-1px; position:relative; z-index:2;
+}
+.auth-tab-btn {
+  flex:1; padding:11px 0; font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:14px; letter-spacing:1.2px; border:1px solid rgba(168,85,247,.4);
+  background:rgba(8,4,20,.72); color:rgba(180,150,240,.55);
+  cursor:pointer; transition:all .3s; backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.auth-tab-btn:first-child { border-radius:14px 0 0 0; border-right:none; }
+.auth-tab-btn:last-child  { border-radius:0 14px 0 0; border-left:none; }
+.auth-tab-btn.active {
+  background:rgba(22,12,60,.97); color:#fff;
+  border-bottom-color:rgba(22,12,60,.97);
+  box-shadow:0 0 28px rgba(168,85,247,.28) inset, 0 -2px 10px rgba(168,85,247,.15);
+  text-shadow:0 0 18px rgba(200,150,255,.5);
+}
+.auth-tab-btn:not(.active):hover {
+  background:rgba(20,10,50,.88); color:rgba(220,180,255,.8);
+}
+
+.auth-card {
+  background:rgba(14,8,42,.90); border:1px solid rgba(168,85,247,.42);
+  border-top:none; border-radius:0 0 22px 22px;
+  padding:28px 30px 26px; backdrop-filter:blur(32px);
+  -webkit-backdrop-filter:blur(32px);
+  box-shadow:
+    0 28px 90px rgba(0,0,0,.85),
+    0 0 50px rgba(100,40,220,.12) inset,
+    0 1px 0 rgba(255,255,255,.04) inset;
+}
+
+/* Add subtle glow border animation on the whole auth wrapper */
+.auth-wrapper {
+  filter: drop-shadow(0 0 30px rgba(130,60,250,.35));
+}
+
+/* Logo inside card */
+.auth-logo-wrap { text-align:center; margin-bottom:18px; }
+.auth-logo-icon {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:64px; height:64px; border-radius:50%;
+  background:linear-gradient(135deg,#6d28d9,#a855f7,#ec4899);
+  box-shadow:0 0 36px rgba(168,85,247,.6), 0 0 0 6px rgba(168,85,247,.1);
+  font-size:30px; margin-bottom:10px;
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+@keyframes logo-pulse {
+  0%,100%{ box-shadow:0 0 36px rgba(168,85,247,.6), 0 0 0 6px rgba(168,85,247,.1); }
+  50%{     box-shadow:0 0 50px rgba(200,100,255,.8), 0 0 0 10px rgba(168,85,247,.15); }
+}
+.auth-logo-title {
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:17px;
+  color:#f1f0ff; letter-spacing:.8px;
+  text-shadow: 0 0 20px rgba(200,150,255,.3);
+}
+
+/* Panels */
+.auth-panel { display:none; }
+.auth-panel.active { display:block; }
+
+/* Input field */
+.auth-field {
+  position:relative; margin-bottom:12px;
+}
+.auth-field-icon {
+  position:absolute; left:13px; top:50%; transform:translateY(-50%);
+  color:rgba(168,85,247,.6); display:flex; align-items:center;
+}
+.auth-field-icon svg { width:16px; height:16px; }
+.auth-input {
+  width:100%; background:rgba(255,255,255,.07); border:1px solid rgba(168,85,247,.3);
+  border-radius:10px; padding:12px 14px 12px 40px; color:#f1f0ff; font-size:13.5px;
+  font-family:'Nunito',sans-serif; outline:none; transition:all .25s;
+}
+.auth-input::placeholder { color:rgba(180,155,230,.4); }
+.auth-input:focus {
+  border-color:rgba(200,120,255,.7);
+  background:rgba(255,255,255,.09);
+  box-shadow: 0 0 16px rgba(168,85,247,.2);
+}
+.auth-input.error { border-color:#ef4444; }
+.auth-field-right {
+  position:absolute; right:13px; top:50%; transform:translateY(-50%);
+  color:rgba(168,85,247,.5); cursor:pointer; display:flex; align-items:center;
+  background:none; border:none; padding:0; transition:color .2s;
+}
+.auth-field-right:hover { color:var(--accent); }
+.auth-field-right svg { width:16px; height:16px; }
+
+/* Error text */
+.auth-error {
+  font-size:11px; color:#f87171; margin-top:-8px; margin-bottom:8px; padding-left:4px;
+  display:none;
+}
+.auth-error.show { display:block; }
+
+/* Main CTA */
+.auth-btn {
+  width:100%; padding:13px; border:none; border-radius:10px; cursor:pointer;
+  background:linear-gradient(135deg,#6d28d9 0%,#a855f7 60%,#c084fc 100%);
+  color:#fff; font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:16px; letter-spacing:1.4px;
+  box-shadow:0 4px 24px rgba(124,58,237,.55), 0 0 0 0 rgba(168,85,247,.3);
+  transition:all .25s;
+  margin-top:4px;
+  position:relative; overflow:hidden;
+}
+.auth-btn::after {
+  content:''; position:absolute; inset:-2px;
+  background:linear-gradient(135deg,rgba(255,255,255,.12),transparent,rgba(255,255,255,.06));
+  border-radius:inherit; pointer-events:none;
+}
+.auth-btn:hover {
+  box-shadow:0 6px 32px rgba(124,58,237,.75), 0 0 40px rgba(168,85,247,.25);
+  transform:translateY(-2px);
+}
+.auth-btn:active { transform:translateY(0); }
+.auth-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+/* Forgot / links */
+.auth-forgot {
+  text-align:right; margin-top:-6px; margin-bottom:12px;
+}
+.auth-forgot a { font-size:12px; color:rgba(168,85,247,.8); cursor:pointer; text-decoration:none; }
+.auth-forgot a:hover { color:#c084fc; text-decoration:underline; }
+
+/* Social login */
+.auth-divider {
+  display:flex; align-items:center; gap:10px; margin:16px 0 14px;
+  font-size:11px; color:rgba(180,155,230,.4); white-space:nowrap;
+}
+.auth-divider::before,.auth-divider::after {
+  content:''; flex:1; height:1px; background:rgba(168,85,247,.18);
+}
+.auth-socials { display:flex; gap:10px; justify-content:center; }
+.auth-social-btn {
+  flex:1; height:40px; border:1px solid rgba(168,85,247,.25); border-radius:10px;
+  background:rgba(255,255,255,.05); cursor:pointer; display:flex; align-items:center;
+  justify-content:center; gap:7px; color:#f1f0ff; font-size:13px; font-weight:600;
+  font-family:'Nunito',sans-serif; transition:all .2s;
+}
+.auth-social-btn:hover { background:rgba(255,255,255,.1); border-color:rgba(168,85,247,.5); }
+.social-icon { width:18px; height:18px; object-fit:contain; }
+
+/* === OTP STEP === */
+.otp-info {
+  text-align:center; margin-bottom:18px;
+}
+.otp-info-icon { font-size:40px; margin-bottom:8px; }
+.otp-info-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:18px; color:#f1f0ff; margin-bottom:4px; }
+.otp-info-desc { font-size:12px; color:rgba(200,180,255,.65); line-height:1.5; }
+.otp-info-email { color:var(--accent2); font-weight:700; }
+
+.otp-boxes { display:flex; gap:10px; justify-content:center; margin-bottom:16px; }
+.otp-box {
+  width:48px; height:56px; border-radius:12px;
+  background:rgba(255,255,255,.07); border:2px solid rgba(168,85,247,.25);
+  text-align:center; font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:24px; color:#f1f0ff; outline:none; transition:all .2s;
+  caret-color:transparent;
+}
+.otp-box:focus { border-color:var(--accent); background:rgba(168,85,247,.12);
+  box-shadow:0 0 16px rgba(168,85,247,.3); }
+.otp-box.filled { border-color:rgba(168,85,247,.6); background:rgba(168,85,247,.1); }
+
+.otp-resend { text-align:center; margin-top:10px; font-size:12px; color:rgba(200,180,255,.5); }
+.otp-resend a { color:var(--accent2); cursor:pointer; font-weight:700; }
+.otp-resend a:hover { text-decoration:underline; }
+.otp-resend a.disabled { color:rgba(200,180,255,.3); cursor:not-allowed; text-decoration:none; }
+.otp-countdown { color:rgba(200,180,255,.4); }
+
+/* Password strength */
+.pw-strength { margin-top:-8px; margin-bottom:10px; }
+.pw-bars { display:flex; gap:4px; margin-bottom:4px; }
+.pw-bar { flex:1; height:3px; border-radius:3px; background:rgba(255,255,255,.1); transition:background .3s; }
+.pw-bar.weak { background:#ef4444; }
+.pw-bar.fair { background:#f59e0b; }
+.pw-bar.strong { background:#22c55e; }
+.pw-label { font-size:10px; color:rgba(200,180,255,.4); }
+
+/* Success screen */
+.auth-success {
+  text-align:center; padding:10px 0 6px;
+}
+.auth-success-icon { font-size:52px; margin-bottom:10px; animation:pop-in .5s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes pop-in { 0%{transform:scale(0) rotate(-10deg)}100%{transform:scale(1) rotate(0)} }
+.auth-success-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:22px; color:#f1f0ff; margin-bottom:6px; }
+.auth-success-sub { font-size:13px; color:rgba(200,180,255,.65); }
+
+/* Spinner */
+.auth-spinner {
+  display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; vertical-align:middle; margin-right:6px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* ===================== CLOCK IN FULLSCREEN CALL ===================== */
+.vfs-clock { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; color:rgba(255,255,255,.9); }
+
+/* ===================== ADMIN BADGE ===================== */
+.admin-badge {
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:#fff; font-size:9px; font-weight:800; padding:2px 7px;
+  border-radius:5px; letter-spacing:.8px; text-transform:uppercase;
+  box-shadow:0 2px 8px rgba(245,158,11,.45);
+  animation: admin-glow 2.5s ease-in-out infinite;
+}
+@keyframes admin-glow {
+  0%,100%{box-shadow:0 2px 8px rgba(245,158,11,.4)}
+  50%{box-shadow:0 2px 18px rgba(245,158,11,.8)}
+}
+.admin-crown { font-size:15px; cursor:default; }
+.nav-admin-crown {
+  font-size:16px; line-height:1; margin-top:2px;
+  filter:drop-shadow(0 0 6px rgba(245,158,11,.8));
+  animation:crown-bob 2s ease-in-out infinite;
+}
+@keyframes crown-bob {0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+/* ===================== MESSAGE SEARCH ===================== */
+.msg-search-bar {
+  display:flex; align-items:center; gap:8px; padding:8px 16px 6px;
+  background:var(--header-bg); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border2); transition:all .3s;
+}
+.msg-search-bar.hidden { display:none; }
+.msg-search-input {
+  flex:1; background:var(--input-bg); border:1.5px solid var(--border2);
+  border-radius:10px; padding:7px 14px; font-size:13px;
+  color:var(--text-1); font-family:'Nunito',sans-serif; outline:none;
+  transition:border-color .2s;
+}
+.msg-search-input:focus { border-color:var(--accent); }
+.msg-search-input::placeholder { color:var(--text-3); }
+.msg-search-nav {
+  display:flex; align-items:center; gap:4px; flex-shrink:0;
+}
+.msg-search-count {
+  font-size:11px; color:var(--text-3); min-width:60px; text-align:center;
+}
+.msg-search-btn {
+  width:28px; height:28px; border:none; border-radius:8px;
+  background:rgba(124,58,237,0.12); color:var(--accent); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:14px; transition:all .2s;
+}
+.msg-search-btn:hover { background:rgba(124,58,237,0.25); }
+.msg-search-close {
+  width:28px; height:28px; border:none; border-radius:8px;
+  background:rgba(239,68,68,0.12); color:#ef4444; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; font-size:16px; transition:all .2s;
+}
+.msg-search-close:hover { background:rgba(239,68,68,0.25); }
+.msg-highlight {
+  background:rgba(245,158,11,0.55); border-radius:3px;
+  padding:0 2px; color:var(--text-1) !important;
+}
+.msg-search-active .msg-bubble {
+  transition:all .25s;
+}
+.msg-search-focused {
+  outline:2.5px solid var(--gold) !important;
+  outline-offset:2px;
+  scroll-margin-top:12px;
+}
+
+/* ===================== CONTEXT MENU ===================== */
+.ctx-menu {
+  position:fixed; z-index:9999; min-width:170px;
+  background:var(--bg-card); border:1px solid var(--border2);
+  border-radius:12px; padding:6px 0;
+  box-shadow:0 12px 40px rgba(0,0,0,.45), var(--glow2);
+  backdrop-filter:blur(16px);
+  display:none; animation:ctx-in .15s ease;
+}
+.ctx-menu.visible { display:block; }
+@keyframes ctx-in { from{opacity:0;transform:scale(.92) translateY(-6px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.ctx-item {
+  display:flex; align-items:center; gap:10px; padding:9px 16px;
+  font-size:13px; font-weight:600; color:var(--text-1);
+  cursor:pointer; transition:background .15s;
+}
+.ctx-item:hover { background:rgba(124,58,237,0.12); }
+.ctx-item.danger { color:#ef4444; }
+.ctx-item.danger:hover { background:rgba(239,68,68,0.1); }
+.ctx-item svg { width:16px; height:16px; flex-shrink:0; }
+.ctx-sep { height:1px; background:var(--border); margin:4px 0; }
+
+/* ===================== DELETE CONFIRM MODAL ===================== */
+.del-confirm-modal {
+  background:var(--bg-card); border:1px solid var(--border2);
+  border-radius:20px; padding:28px 28px 22px; text-align:center;
+  min-width:300px; max-width:340px;
+  box-shadow:0 20px 60px rgba(0,0,0,.55),var(--glow2);
+}
+.del-confirm-icon { font-size:42px; margin-bottom:10px; }
+.del-confirm-title { font-family:'Rajdhani',sans-serif; font-weight:700; font-size:20px; color:var(--text-1); margin-bottom:6px; }
+.del-confirm-sub { font-size:13px; color:var(--text-3); margin-bottom:22px; line-height:1.5; }
+.del-confirm-btns { display:flex; gap:10px; justify-content:center; }
+.del-cancel-btn {
+  padding:9px 22px; border-radius:10px; border:1px solid var(--border2);
+  background:transparent; color:var(--text-2); font-size:13px; font-weight:700;
+  cursor:pointer; font-family:'Nunito',sans-serif; transition:all .2s;
+}
+.del-cancel-btn:hover { background:rgba(124,58,237,0.1); }
+.del-ok-btn {
+  padding:9px 22px; border-radius:10px; border:none;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  color:#fff; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:'Nunito',sans-serif; transition:all .2s;
+  box-shadow:0 4px 14px rgba(239,68,68,.4);
+}
+.del-ok-btn:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(239,68,68,.55); }
+
+/* ===================== ANNOUNCE CHANNEL ===================== */
+.announce-lock-bar {
+  display:none; align-items:center; justify-content:center; gap:8px;
+  padding:8px 16px; background:rgba(245,158,11,.1);
+  border:1px solid rgba(245,158,11,.25); border-radius:10px;
+  margin:8px 12px; font-size:12px; color:var(--gold); font-weight:600;
+}
+[data-theme="light"] .announce-lock-bar { color:#b45309; }
+.announce-lock-bar.show { display:flex; }
+.announce-tag {
+  background:linear-gradient(135deg,rgba(245,158,11,.2),rgba(217,119,6,.15));
+  border:1px solid rgba(245,158,11,.3); color:var(--gold); font-size:9px;
+  font-weight:800; padding:1px 6px; border-radius:4px; letter-spacing:.6px;
+}
+[data-theme="light"] .announce-tag { color:#b45309; }
+.input-bar.readonly { opacity:.6; pointer-events:none; }
+.input-bar.readonly::after {
+  content:'🔒 Chỉ admin mới gửi được tin nhắn';
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:12px; color:var(--gold); background:rgba(0,0,0,.25);
+  backdrop-filter:blur(2px); border-radius:8px;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div class="login-screen" id="loginScreen">
+  <!-- Backgrounds -->
+  <div class="login-bg"></div>
+  <div class="login-bg-stadium"></div>
+  <div class="login-bg-overlay"></div>
+  <div class="login-particles" id="loginParticles"></div>
+
+  <!-- Left info -->
+  <div class="login-side-info left">
+    <div class="side-info-card">
+      <div class="side-weather">25°C ☁️</div>
+      <div class="side-weather-desc">Perfect day for<br>bread &amp; football</div>
+    </div>
+  </div>
+
+  <!-- Right info -->
+  <div class="login-side-info right">
+    <div class="side-info-card">
+      <div class="side-weather">24°C ☁️</div>
+      <div class="side-weather-desc">Perfect day for<br>bread &amp; football</div>
+    </div>
+  </div>
+
+  <!-- ── AUTH CARD ── -->
+  <div class="auth-wrapper">
+
+    <!-- Tab buttons -->
+    <div class="auth-tabs">
+      <button class="auth-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">ĐĂNG NHẬP</button>
+      <button class="auth-tab-btn" id="tabRegisterBtn" onclick="switchAuthTab('register')">ĐĂNG KÝ</button>
+    </div>
+
+    <div class="auth-card">
+      <!-- Logo -->
+      <div class="auth-logo-wrap">
+        <div class="auth-logo-icon">⚽</div>
+        <div class="auth-logo-title">CRUST &amp; GOAL - <span id="authCardTitle">Chào mừng trở lại!</span></div>
+      </div>
+
+      <!-- ─── PANEL: LOGIN ─── -->
+      <div class="auth-panel active" id="panelLogin">
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input class="auth-input" id="loginId" placeholder="Tên người dùng or Email" type="text" autocomplete="username"/>
+        </div>
+        <div class="auth-error" id="loginIdErr">Vui lòng nhập tên hoặc email</div>
+
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input class="auth-input" id="loginPw" placeholder="Mật khẩu" type="password" autocomplete="current-password"/>
+          <button class="auth-field-right" onclick="togglePw('loginPw',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="auth-error" id="loginPwErr">Mật khẩu không đúng</div>
+
+        <div class="auth-forgot"><a onclick="switchAuthTab('forgot')">Quên mật khẩu?</a></div>
+
+        <button class="auth-btn" id="loginBtn" onclick="doLogin()">ĐĂNG NHẬP</button>
+
+        <div class="auth-divider">Đăng nhập nhanh với</div>
+        <div class="auth-socials">
+          <button class="auth-social-btn" onclick="socialLogin('Google')">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Google
+          </button>
+          <button class="auth-social-btn" onclick="socialLogin('Facebook')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            Facebook
+          </button>
+          <button class="auth-social-btn" onclick="socialLogin('Zalo')" style="font-size:12px;">
+            <span style="background:#0068FF;color:#fff;border-radius:4px;padding:1px 6px;font-weight:800;font-size:13px;">Z</span>
+            Zalo
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── PANEL: REGISTER ─── -->
+      <div class="auth-panel" id="panelRegister">
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input class="auth-input" id="regName" placeholder="Họ và tên" type="text"/>
+        </div>
+        <div class="auth-error" id="regNameErr">Vui lòng nhập họ tên (ít nhất 2 ký tự)</div>
+
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+          <input class="auth-input" id="regEmail" placeholder="Email của bạn" type="email" autocomplete="email"/>
+        </div>
+        <div class="auth-error" id="regEmailErr">Email không hợp lệ</div>
+
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input class="auth-input" id="regPw" placeholder="Tạo mật khẩu (tối thiểu 6 ký tự)" type="password" oninput="checkPwStrength(this.value)" autocomplete="new-password"/>
+          <button class="auth-field-right" onclick="togglePw('regPw',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="pw-strength">
+          <div class="pw-bars"><div class="pw-bar" id="pb1"></div><div class="pw-bar" id="pb2"></div><div class="pw-bar" id="pb3"></div><div class="pw-bar" id="pb4"></div></div>
+          <div class="pw-label" id="pwLabel">Nhập mật khẩu</div>
+        </div>
+        <div class="auth-error" id="regPwErr">Mật khẩu cần ít nhất 6 ký tự</div>
+
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          <input class="auth-input" id="regPw2" placeholder="Xác nhận mật khẩu" type="password" autocomplete="new-password"/>
+          <button class="auth-field-right" onclick="togglePw('regPw2',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="auth-error" id="regPw2Err">Mật khẩu xác nhận không khớp</div>
+
+        <button class="auth-btn" id="regBtn" onclick="doRegister()">ĐĂNG KÝ</button>
+      </div>
+
+      <!-- ─── PANEL: OTP ─── -->
+      <div class="auth-panel" id="panelOtp">
+        <div class="otp-info">
+          <div class="otp-info-icon">📩</div>
+          <div class="otp-info-title">Xác Thực OTP</div>
+          <div class="otp-info-desc">
+            Chúng tôi đã gửi mã 6 số đến<br>
+            <span class="otp-info-email" id="otpEmailDisplay"></span><br>
+            Mã có hiệu lực trong <strong id="otpValidMin">10</strong> phút.
+          </div>
+        </div>
+        <div class="otp-boxes">
+          <input class="otp-box" id="otp0" maxlength="1" inputmode="numeric" oninput="otpInput(0,this)" onkeydown="otpKeydown(0,event)"/>
+          <input class="otp-box" id="otp1" maxlength="1" inputmode="numeric" oninput="otpInput(1,this)" onkeydown="otpKeydown(1,event)"/>
+          <input class="otp-box" id="otp2" maxlength="1" inputmode="numeric" oninput="otpInput(2,this)" onkeydown="otpKeydown(2,event)"/>
+          <input class="otp-box" id="otp3" maxlength="1" inputmode="numeric" oninput="otpInput(3,this)" onkeydown="otpKeydown(3,event)"/>
+          <input class="otp-box" id="otp4" maxlength="1" inputmode="numeric" oninput="otpInput(4,this)" onkeydown="otpKeydown(4,event)"/>
+          <input class="otp-box" id="otp5" maxlength="1" inputmode="numeric" oninput="otpInput(5,this)" onkeydown="otpKeydown(5,event)"/>
+        </div>
+        <div class="auth-error" id="otpErr" style="text-align:center;">Mã OTP không đúng. Vui lòng thử lại.</div>
+
+        <button class="auth-btn" id="otpBtn" onclick="verifyOTP()">XÁC NHẬN</button>
+
+        <div class="otp-resend">
+          Không nhận được mã?
+          <a id="resendLink" onclick="resendOTP()">Gửi lại</a>
+          <span class="otp-countdown" id="otpCountdown"></span>
+        </div>
+      </div>
+
+      <!-- ─── PANEL: FORGOT PASSWORD ─── -->
+      <div class="auth-panel" id="panelForgot">
+        <div class="otp-info">
+          <div class="otp-info-icon">🔑</div>
+          <div class="otp-info-title">Quên Mật Khẩu?</div>
+          <div class="otp-info-desc">Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.</div>
+        </div>
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+          <input class="auth-input" id="forgotEmail" placeholder="Email của bạn" type="email"/>
+        </div>
+        <div class="auth-error" id="forgotEmailErr">Email không hợp lệ hoặc chưa đăng ký</div>
+        <button class="auth-btn" onclick="doForgotPassword()">GỬI MÃ OTP</button>
+        <div style="text-align:center;margin-top:12px;">
+          <a style="font-size:12px;color:rgba(168,85,247,.7);cursor:pointer;" onclick="switchAuthTab('login')">← Quay lại đăng nhập</a>
+        </div>
+      </div>
+
+      <!-- ─── PANEL: RESET PASSWORD ─── -->
+      <div class="auth-panel" id="panelReset">
+        <div class="otp-info">
+          <div class="otp-info-icon">🔒</div>
+          <div class="otp-info-title">Đặt Lại Mật Khẩu</div>
+          <div class="otp-info-desc">Nhập mật khẩu mới của bạn</div>
+        </div>
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input class="auth-input" id="newPw" placeholder="Mật khẩu mới" type="password"/>
+          <button class="auth-field-right" onclick="togglePw('newPw',this)" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="auth-field">
+          <span class="auth-field-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+          <input class="auth-input" id="newPw2" placeholder="Xác nhận mật khẩu mới" type="password"/>
+        </div>
+        <div class="auth-error" id="resetErr">Mật khẩu xác nhận không khớp</div>
+        <button class="auth-btn" onclick="doResetPassword()">ĐẶT LẠI MẬT KHẨU</button>
+      </div>
+
+      <!-- ─── PANEL: SUCCESS ─── -->
+      <div class="auth-panel" id="panelSuccess">
+        <div class="auth-success">
+          <div class="auth-success-icon">🎉</div>
+          <div class="auth-success-title" id="successTitle">Đăng Ký Thành Công!</div>
+          <div class="auth-success-sub" id="successSub">Chào mừng bạn đến với Crust &amp; Goal!</div>
+        </div>
+        <button class="auth-btn" style="margin-top:20px;" onclick="enterApp()">VÀO CHAT ⚽</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="login-bottom-bar">
+    <div class="lbb-left">
+      <div class="lbb-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+      <span class="lbb-online">ONLINE</span>
+    </div>
+    <div class="lbb-center">
+      <div class="lbb-match-label">TRẬN TIẾP THEO · CHỦ NHẬT, 19:00</div>
+      <div class="lbb-countdown">
+        <div><div class="lbb-num" id="lbbDays">05</div><span class="lbb-unit">NGÀY</span></div>
+        <div class="lbb-sep">:</div>
+        <div><div class="lbb-num" id="lbbHrs">00</div><span class="lbb-unit">GIỜ</span></div>
+        <div class="lbb-sep">:</div>
+        <div><div class="lbb-num" id="lbbMin">23</div><span class="lbb-unit">PHÚT</span></div>
+        <div style="margin-left:8px;font-size:18px;">⚙️</div>
+      </div>
+    </div>
+    <div class="lbb-right">
+      <div>
+        <div class="lbb-weather-temp">24°C ☁️</div>
+        <div class="lbb-weather-desc">Ngày tuyệt vời cho bánh mì & bóng đá</div>
+      </div>
+      <div class="lbb-stadium-icon">🏟️</div>
+    </div>
+  </div>
+</div>
+
+<!-- INCOMING CALL MODAL -->
+<div class="modal-overlay" id="callModal">
+  <div class="call-modal">
+    <div class="call-avatar-ring">
+      <img id="callAvatar" src="https://i.pravatar.cc/150?img=47" alt="">
+    </div>
+    <div class="call-name" id="callCallerName">Minh Anh</div>
+    <div class="call-type" id="callType">📞 Đang có cuộc gọi đến...</div>
+    <div class="call-btns">
+      <button class="call-accept" onclick="acceptCall()">📞</button>
+      <button class="call-reject" onclick="rejectCall()">📵</button>
+    </div>
+  </div>
+</div>
+
+<!-- FULLSCREEN VIDEO CALL (kiểu mới) -->
+<div class="video-fullscreen" id="videoFullscreen">
+  <!-- Background: Ronaldo image -->
+  <div class="vfs-bg-image" id="vfsBgImage"></div>
+  <div class="vfs-bg-overlay"></div>
+
+  <div class="video-fs-main">
+    <video id="fsRemoteVideo" autoplay playsinline></video>
+
+    <!-- Caller avatar shown when waiting / audio call -->
+    <div class="vfs-caller-info" id="vfsCallerInfo">
+      <div class="vfs-caller-avatar" id="vfsCallerAvatar">
+        <img id="vfsCallerAvatarImg" src="" alt="" onerror="this.style.display='none'"/>
+        <span id="vfsCallerInitials">LA</span>
+      </div>
+      <div class="vfs-caller-name" id="fsCallerName">Lan Anh</div>
+      <div class="vfs-caller-status" id="fsCallStatus">Đang gọi video...</div>
+    </div>
+
+    <!-- Top bar -->
+    <div class="vfs-top-bar">
+      <div class="vfs-call-status">
+        <div class="vfs-active-dot"></div>
+        <span>Đang gọi: <span id="fsCallerNameTop">Lan Anh</span></span>
+      </div>
+      <div class="vfs-top-right">
+        <span class="vfs-clock" id="vfsClock"></span>
+        <span class="vfs-signal">📶</span>
+      </div>
+    </div>
+
+    <!-- Self cam: stays always visible bottom-right -->
+    <video id="fsLocalVideo" autoplay muted playsinline></video>
+  </div>
+
+  <!-- Controls bottom -->
+  <div class="video-fs-controls">
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" id="fsMicBtn" onclick="toggleMic()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+      </button>
+      <span class="fs-ctrl-label" id="fsMicLabel">Tắt mic</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" id="fsCamBtn" onclick="toggleCam()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+      </button>
+      <span class="fs-ctrl-label" id="fsCamLabel">Tắt video</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn end-call" onclick="endCall()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.06-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" transform="rotate(135,12,12)"/></svg>
+      </button>
+      <span class="fs-ctrl-label">Kết thúc</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" id="fsSpkBtn" onclick="toggleSpeaker()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+      </button>
+      <span class="fs-ctrl-label" id="fsSpkLabel">Loa</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" onclick="shareScreen()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      </button>
+      <span class="fs-ctrl-label">Màn hình</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" onclick="toggleFullscreenMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <span class="fs-ctrl-label">Chat</span>
+    </div>
+    <div class="fs-ctrl-item">
+      <button class="fs-btn" onclick="toggleFullscreen()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+      <span class="fs-ctrl-label">Toàn màn</span>
+    </div>
+  </div>
+</div>
+
+<!-- VOICE OVERLAY -->
+<div class="voice-overlay" id="voiceOverlay">
+  <div class="voice-overlay-inner">
+    <div class="voice-rings">
+      <div class="voice-ring r1"></div>
+      <div class="voice-ring r2"></div>
+      <div class="voice-ring r3"></div>
+      <div class="voice-mic-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" width="32" height="32">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8" y1="22" x2="16" y2="22"/>
+        </svg>
+      </div>
+    </div>
+    <div class="voice-overlay-text" id="voiceText">🎙️ Đang nghe...</div>
+    <div class="voice-overlay-hint">Nói xong → tin nhắn tự động gửi</div>
+    <button class="voice-cancel-btn" onclick="recognition && recognition.stop()">Huỷ</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MAIN APP -->
+<div class="app-container" id="mainApp" style="display:none">
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar-nav">
+    <div class="nav-logo">KT</div>
+    <!-- Chat -->
+    <div class="nav-item active" title="Tin nhắn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <!-- Notifications -->
+    <div class="nav-item" title="Thông báo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+    <!-- Orders -->
+    <div class="nav-item" title="Đơn hàng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </div>
+    <!-- Stats -->
+    <div class="nav-item" title="Thống kê">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    </div>
+    <!-- Settings -->
+    <div class="nav-item" title="Cài đặt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </div>
+
+    <div class="nav-bottom">
+      <!-- Theme toggle -->
+      <button class="theme-toggle" onclick="toggleTheme()" title="Chuyển chế độ sáng/tối" id="themeToggleBtn">🌙</button>
+      <!-- Admin crown (shown only for admin) -->
+      <div class="nav-admin-crown" id="navAdminCrown" style="display:none" title="Tài khoản Admin">👑</div>
+      <div class="nav-avatar" style="position:relative">
+        <img src="https://i.pravatar.cc/150?img=12" alt="">
+        <div class="online-dot"></div>
+      </div>
+      <span class="online-label">ONLINE</span>
+    </div>
+  </nav>
+
+  <!-- CHAT LIST PANEL -->
+  <div class="chat-list-panel">
+    <div class="chat-list-header">
+      <div class="brand-row">
+        <div>
+          <div class="brand-name">CRUST & GOAL</div>
+          <div class="brand-sub">Tin Nhắn</div>
+        </div>
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </div>
+      </div>
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm..." oninput="filterChats()">
+      </div>
+      <button class="new-chat-btn" onclick="startNewChat()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tin Nhắn Mới
+      </button>
+      <div class="filter-tabs">
+        <button class="tab-btn active" onclick="setTab(this,'all')">Tất Cả</button>
+        <button class="tab-btn" onclick="setTab(this,'unread')">Chưa Đọc</button>
+        <button class="tab-btn" onclick="setTab(this,'groups')">Nhóm</button>
+      </div>
+    </div>
+
+    <div class="chat-list-body">
+      <!-- ADMIN ANNOUNCE CHANNEL -->
+      <div class="section-label" id="announceSection" style="display:none">
+        📢 THÔNG BÁO ADMIN
+        <span class="announce-tag">ADMIN ONLY</span>
+      </div>
+      <div class="chat-item" id="chat-announce" style="display:none"
+           onclick="openChat('announce','📢 Thông Báo Chính Thức','')"
+           oncontextmenu="showCtxMenu(event,'announce','📢 Thông Báo Chính Thức')">
+        <div class="chat-avatar"><div class="avatar-text" style="background:linear-gradient(135deg,#f59e0b,#d97706)">📢</div></div>
+        <div class="chat-info">
+          <div class="chat-name">📢 Thông Báo Chính Thức <span class="admin-badge">ADMIN</span></div>
+          <div class="chat-preview">Chỉ admin mới gửi được tin nhắn</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">Mới</span></div>
+      </div>
+
+      <div class="section-label">TIN NHẮN ĐÃ GHM <span>2</span></div>
+      <div class="chat-item" id="chat-bakery"
+           onclick="openChat('bakery','Hỗ Trợ Tiệm Bánh','https://i.pravatar.cc/150?img=5')"
+           oncontextmenu="showCtxMenu(event,'bakery','Hỗ Trợ Tiệm Bánh')">
+        <div class="chat-avatar"><img src="https://i.pravatar.cc/150?img=5" alt=""></div>
+        <div class="chat-info">
+          <div class="chat-name">Hỗ Trợ Tiệm Bánh</div>
+          <div class="chat-preview">Chúng tôi luôn sẵn sàng hỗ trợ! 🍞</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">11:30 SA</span><span class="chat-badge">2</span></div>
+      </div>
+      <div class="chat-item" id="chat-vip"
+           onclick="openChat('vip','Khách Hàng VIP','')"
+           oncontextmenu="showCtxMenu(event,'vip','Khách Hàng VIP')">
+        <div class="chat-avatar"><div class="avatar-text">🏆</div></div>
+        <div class="chat-info">
+          <div class="chat-name">Khách Hàng VIP</div>
+          <div class="chat-preview">Ưu đãi đặc biệt dành cho bạn 🔥</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">10:45 SA</span><span class="chat-badge yellow">5</span></div>
+      </div>
+      <div class="section-label">TIN NHẮN GẦN ĐÂY <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></div>
+      <div class="chat-item active" id="chat-minhahn"
+           onclick="openChat('minhahn','Minh Anh','https://i.pravatar.cc/150?img=47')"
+           oncontextmenu="showCtxMenu(event,'minhahn','Minh Anh')">
+        <div class="chat-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+        <div class="chat-info">
+          <div class="chat-name">Minh Anh <span class="vip-badge">VIP</span></div>
+          <div class="chat-preview">Xin chào! Cho tôi đặt bánh mì chua...</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">9:41 SA</span><span class="chat-badge">1</span></div>
+      </div>
+      <div class="chat-item" id="chat-hoangduc"
+           onclick="openChat('hoangduc','Hoàng Đức','https://i.pravatar.cc/150?img=68')"
+           oncontextmenu="showCtxMenu(event,'hoangduc','Hoàng Đức')">
+        <div class="chat-avatar"><img src="https://i.pravatar.cc/150?img=68" alt=""></div>
+        <div class="chat-info">
+          <div class="chat-name">Hoàng Đức</div>
+          <div class="chat-preview">Chủ đề bóng đá mới quá đỉnh!</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">9:10 SA</span></div>
+      </div>
+      <div class="chat-item" id="chat-sourdoughlovers"
+           onclick="openChat('sourdoughlovers','Hội Mê Bánh Mì Chua','')"
+           oncontextmenu="showCtxMenu(event,'sourdoughlovers','Hội Mê Bánh Mì Chua')">
+        <div class="chat-avatar"><div class="avatar-text">👥</div></div>
+        <div class="chat-info">
+          <div class="chat-name">Hội Mê Bánh Mì Chua</div>
+          <div class="chat-preview">Kevin: Cái vỏ bánh đó! 😍</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">8:30 SA</span><span class="chat-badge">12</span></div>
+      </div>
+      <div class="chat-item" id="chat-tranbao"
+           onclick="openChat('tranbao','Trần Bảo','https://i.pravatar.cc/150?img=33')"
+           oncontextmenu="showCtxMenu(event,'tranbao','Trần Bảo')">
+        <div class="chat-avatar"><img src="https://i.pravatar.cc/150?img=33" alt=""></div>
+        <div class="chat-info">
+          <div class="chat-name">Trần Bảo</div>
+          <div class="chat-preview">Hẹn gặp ở cửa hàng mới nhé!</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">Hôm qua</span></div>
+      </div>
+      <div class="chat-item" id="chat-champions"
+           onclick="openChat('champions','Câu Lạc Bộ Nhà Vô Địch','https://i.pravatar.cc/150?img=50')"
+           oncontextmenu="showCtxMenu(event,'champions','Câu Lạc Bộ Nhà Vô Địch')">
+        <div class="chat-avatar"><img src="https://i.pravatar.cc/150?img=50" alt=""></div>
+        <div class="chat-info">
+          <div class="chat-name">Câu Lạc Bộ Nhà Vô Địch</div>
+          <div class="chat-preview">Trận tiếp theo, cuối tuần này!</div>
+        </div>
+        <div class="chat-meta"><span class="chat-time">Hôm qua</span></div>
+      </div>
+
+      <div class="promo-banner">
+        <div class="promo-title">BÁNH MÌ NHÀ VÔ ĐỊCH</div>
+        <div class="promo-sub">TIẾP SỨC CHIẾN THẮNG · Phiên bản giới hạn mới</div>
+        <button class="promo-btn">ĐẶT NGAY</button>
+        <div class="promo-img">
+          <img src="kt.png" alt="Champion Bread">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT MAIN -->
+  <div class="chat-main">
+    <div class="chat-header">
+      <div class="chat-header-avatar">
+        <img src="https://i.pravatar.cc/150?img=47" id="chatHeaderAvatar" alt="">
+      </div>
+      <div class="chat-header-info">
+        <div class="name" id="chatHeaderName">Minh Anh</div>
+        <div class="status"><div class="status-dot"></div> Đang hoạt động</div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="header-btn" onclick="startVoiceCall()" title="Gọi thoại">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.06-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </button>
+        <button class="header-btn" onclick="startVideoCall()" title="Gọi video">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </button>
+        <button class="header-btn" onclick="toggleMsgSearch()" title="Tìm kiếm tin nhắn" id="searchHeaderBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="header-btn" title="Thêm">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- MESSAGE SEARCH BAR -->
+    <div class="msg-search-bar hidden" id="msgSearchBar">
+      <input class="msg-search-input" id="msgSearchInput" placeholder="Tìm kiếm tin nhắn (có dấu hoặc không dấu)..."
+             oninput="doMsgSearch(this.value)" onkeydown="msgSearchKey(event)">
+      <div class="msg-search-nav">
+        <span class="msg-search-count" id="msgSearchCount"></span>
+        <button class="msg-search-btn" onclick="navigateSearch(-1)" title="Kết quả trước">▲</button>
+        <button class="msg-search-btn" onclick="navigateSearch(1)" title="Kết quả sau">▼</button>
+        <button class="msg-search-close" onclick="closeMsgSearch()">✕</button>
+      </div>
+    </div>
+
+    <!-- ANNOUNCE LOCK BAR -->
+    <div class="announce-lock-bar" id="announceLockBar">
+      🔒 Kênh thông báo — chỉ admin mới gửi được tin nhắn
+    </div>
+
+    <div class="messages-area" id="messagesArea">
+      <div class="date-divider">Hôm nay</div>
+
+      <!-- Message 1: received -->
+      <div class="msg-row" data-id="d1">
+        <div class="msg-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+        <div>
+          <div class="msg-bubble">Xin chào! Tôi muốn đặt bánh mì chua với ô liu và hương thảo ạ</div>
+          <div class="msg-time">9:41 SA</div>
+        </div>
+      </div>
+
+      <!-- Message 2: sent -->
+      <div class="msg-row sent" data-id="d2">
+        <div>
+          <div class="msg-bubble">Lựa chọn tuyệt vời! 🌿✨<br>Hôm nay chúng tôi có bánh tươi mới ra lò.</div>
+          <div class="msg-time">9:42 SA <span class="check-icon">✓✓</span></div>
+        </div>
+      </div>
+
+      <!-- Message 3: voice message received -->
+      <div class="msg-row" data-id="d3">
+        <div class="msg-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+        <div>
+          <div class="msg-bubble" style="padding:8px 10px">
+            <div class="voice-msg">
+              <button class="play-btn" onclick="toggleVoice(this)">▶</button>
+              <div class="voice-wave">
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+                <div class="voice-bar"></div><div class="voice-bar"></div>
+              </div>
+              <div class="voice-duration">0:12</div>
+            </div>
+          </div>
+          <div class="msg-time">9:43 SA</div>
+        </div>
+      </div>
+
+      <!-- Message 4: product card sent -->
+      <div class="msg-row sent" data-id="d4">
+        <div>
+          <div class="msg-bubble">
+            <div class="product-card">
+              <div class="product-img">🍞</div>
+              <div class="product-info">
+                <div class="product-name">Bánh Mì Chua Ô Liu & Hương Thảo</div>
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div class="product-price">159.000đ</div>
+                  <button class="add-to-cart-btn">ĐẶT HÀNG</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="msg-time">9:44 SA <span class="check-icon">✓✓</span></div>
+        </div>
+      </div>
+
+      <!-- Message 5: received -->
+      <div class="msg-row" data-id="d5">
+        <div class="msg-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+        <div>
+          <div class="msg-bubble">Tuyệt quá! Cho tôi thêm 2 cái nữa được không ạ?</div>
+          <div class="msg-time">9:45 SA</div>
+        </div>
+      </div>
+
+      <!-- Message 6: sent -->
+      <div class="msg-row sent" data-id="d6">
+        <div>
+          <div class="msg-bubble">Được chứ! Bạn muốn thêm gì không? 😊</div>
+          <div class="msg-time">9:46 SA <span class="check-icon">✓✓</span></div>
+        </div>
+      </div>
+
+      <!-- Message 7: received -->
+      <div class="msg-row" data-id="d7">
+        <div class="msg-avatar"><img src="https://i.pravatar.cc/150?img=47" alt=""></div>
+        <div>
+          <div class="msg-bubble">Vậy thôi ạ. Cảm ơn nhiều! Các bạn thật tuyệt! Chúc luôn chiến thắng! 🏆⚽<br><span>❤️</span></div>
+          <div class="msg-time">9:47 SA</div>
+        </div>
+      </div>
+
+      <!-- Message 8: sent -->
+      <div class="msg-row sent" data-id="d8">
+        <div>
+          <div class="msg-bubble">Cảm ơn bạn! Hẹn gặp lại! 👋🍞</div>
+          <div class="msg-time">9:47 SA <span class="check-icon">✓✓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="file-preview-bar" id="filePreviewBar">
+      <span>📎</span>
+      <span class="file-preview-name" id="filePreviewName"></span>
+      <button class="file-preview-remove" onclick="removeFile()">✕</button>
+    </div>
+
+    <div class="input-bar">
+      <button class="plus-btn" onclick="document.getElementById('fileInput').click()">+</button>
+      <input type="file" id="fileInput" hidden onchange="handleFile(event)">
+      <div class="input-wrap">
+        <input type="text" id="messageInput" placeholder="Nhập tin nhắn..."
+          onkeydown="handleKey(event)" oninput="handleTyping()">
+        <div class="input-action-btns">
+          <button class="input-btn" onclick="toggleEmoji()" title="Biểu cảm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </button>
+          <button class="input-btn" onclick="document.getElementById('fileInput').click()" title="Đính kèm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <button class="input-btn mic-btn" id="micBtn" onclick="toggleRecording()" title="Tin nhắn thoại">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+          </button>
+        </div>
+      </div>
+      <button class="send-btn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="profile-card">
+      <div class="profile-bg"></div>
+      <button class="close-panel-btn">✕</button>
+      <div class="profile-avatar-wrap">
+        <img
+          src="https://www.minhtunailspa.com/wp-content/uploads/2025/11/anh-gai-xinh-viet-nam-ngot-ngao-de-thuong-1.webp.webp"
+          id="profileAvatar" alt="Minh Anh"
+          onerror="this.src='https://i.pravatar.cc/150?img=47'"
+        >
+        <div class="profile-online-dot"></div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="profileName">Minh Anh</div>
+        <div class="profile-role">Khách Hàng VIP</div>
+        <div class="profile-since">Thành viên từ Tháng 3, 2024</div>
+        <div class="profile-stats">
+          <div class="stat-item"><div class="stat-label">Đơn hàng</div><div class="stat-value">12</div></div>
+          <div class="stat-item"><div class="stat-label">Đã chi</div><div class="stat-value" style="font-size:11px">5.8tr đ</div></div>
+          <div class="stat-item"><div class="stat-label">Điểm</div><div class="stat-value">1.250</div></div>
+        </div>
+        <button class="view-profile-btn">XEM HỒ SƠ</button>
+      </div>
+    </div>
+
+    <div class="quick-actions">
+      <div class="action-card" onclick="startVoiceCall()">
+        <div class="action-icon">🎙️</div>
+        <div class="action-label">Gọi Thoại</div>
+      </div>
+      <div class="action-card" onclick="startVideoCall()">
+        <div class="action-icon">📹</div>
+        <div class="action-label">Gọi Video</div>
+      </div>
+      <div class="action-card">
+        <div class="action-icon">📋</div>
+        <div class="action-label">Lịch Sử Đặt</div>
+      </div>
+      <div class="action-card">
+        <div class="action-icon">🏆</div>
+        <div class="action-label">Điểm Thưởng</div>
+      </div>
+    </div>
+
+    <div class="video-widget" id="videoWidget" style="display:none">
+      <div class="video-header">
+        <div class="video-dot"></div>
+        <span>Gọi Video</span>
+        <span class="video-timer" id="callTimer">00:00</span>
+      </div>
+      <div class="video-main">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div class="video-thumb">
+          <video id="localVideo" autoplay muted playsinline></video>
+        </div>
+      </div>
+      <div class="video-controls">
+        <button class="v-btn" onclick="toggleMic()" title="Tắt/Bật mic">🎤</button>
+        <button class="v-btn" onclick="toggleCam()" title="Tắt/Bật camera">📷</button>
+        <button class="v-btn" onclick="toggleFullscreenMode()" title="Toàn màn hình">⛶</button>
+        <button class="v-btn end" onclick="endCall()" title="Kết thúc cuộc gọi">📵</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="bottom-section">
+      <div class="stadium-thumb">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfACij1NMu3m_vB4MRY3svqVBA3bmEtf5blw&s" alt="">
+      </div>
+      <div class="bottom-tagline">
+        <div class="bottom-tagline-main">CHIẾN THẮNG Ở TRONG TỪNG CHI TIẾT</div>
+        <div class="bottom-tagline-sub">Giống như một ổ bánh mì hoàn hảo.</div>
+      </div>
+    </div>
+    <div class="bottom-section countdown-section">
+      <div class="countdown-badge">KT</div>
+      <div class="match-info">
+        <div class="match-label">TRẬN TIẾP THEO · CHỦ NHẬT, 19:00</div>
+        <div class="countdown-timer">
+          <div><div class="countdown-num" id="cdDays">02</div><div class="match-day">NGÀY</div></div>
+          <div class="countdown-sep">:</div>
+          <div><div class="countdown-num" id="cdHrs">14</div><div class="match-day">GIỜ</div></div>
+          <div class="countdown-sep">:</div>
+          <div><div class="countdown-num" id="cdMin">30</div><div class="match-day">PHÚT</div></div>
+        </div>
+      </div>
+      <div class="ball-icon">⚽</div>
+    </div>
+    <div class="bottom-section weather-section">
+      <div>
+        <div class="weather-temp">24°C ☁️</div>
+        <div class="weather-desc">Ngày tuyệt vời cho bánh mì & bóng đá</div>
+      </div>
+      <div class="weather-icon">🏟️</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTEXT MENU (RIGHT-CLICK) -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="ctxOpenChat()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Mở cuộc trò chuyện
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="confirmDeleteChat()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+    Xóa cuộc trò chuyện
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="delConfirmModal">
+  <div class="del-confirm-modal">
+    <div class="del-confirm-icon">🗑️</div>
+    <div class="del-confirm-title">Xóa Cuộc Trò Chuyện?</div>
+    <div class="del-confirm-sub">Cuộc trò chuyện với <strong id="delChatName"></strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.</div>
+    <div class="del-confirm-btns">
+      <button class="del-cancel-btn" onclick="closeDelConfirm()">Hủy</button>
+      <button class="del-ok-btn" onclick="doDeleteChat()">Xóa ngay</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =================== THEME ===================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeToggleBtn').textContent = isDark ? '🌙' : '☀️';
+}
+
+// =================== STATE ===================
+let socket = null;
+let myUsername = '';
+let myRoom = 'lobby';
+let isAdmin = false; // ADMIN FLAG
+let currentChat = { id: 'minhahn', name: 'Minh Anh', avatar: 'https://i.pravatar.cc/150?img=47' };
+let localStream = null;
+let peerConnection = null;
+let currentCallPeer = null;
+let callAccepted = false;
+let isVideo = true;
+let isMicOn = true;
+
+// =================== ADMIN SETUP ===================
+// Hardcoded admin account (username: admin, password: admin123)
+const ADMIN_USERNAME = 'admin';
+const ADMIN_PASSWORD = 'admin123';
+
+function initAdminAccount() {
+  const users = getUsers();
+  if (!users['admin@crustgoal.vn']) {
+    users['admin@crustgoal.vn'] = {
+      username: 'admin', displayName: 'Admin',
+      email: 'admin@crustgoal.vn', password: ADMIN_PASSWORD,
+      isAdmin: true, createdAt: new Date().toISOString()
+    };
+    saveUsers(users);
+  }
+}
+initAdminAccount();
+
+function applyAdminUI() {
+  if (!isAdmin) return;
+  document.getElementById('navAdminCrown').style.display = 'block';
+  // Show announce channel
+  const sec = document.getElementById('announceSection');
+  const item = document.getElementById('chat-announce');
+  if (sec) sec.style.display = '';
+  if (item) item.style.display = '';
+  showToast('👑 Chào mừng Admin!', 3500);
+}
+
+// =================== VIETNAMESE NORMALIZE ===================
+function normalizeVi(str) {
+  if (!str) return '';
+  return str.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
+// =================== MESSAGE SEARCH ===================
+let searchMatches = [];
+let searchIdx = -1;
+let originalHTML = new Map(); // store original innerHTML of bubbles
+
+function toggleMsgSearch() {
+  const bar = document.getElementById('msgSearchBar');
+  const btn = document.getElementById('searchHeaderBtn');
+  const isHidden = bar.classList.contains('hidden');
+  if (isHidden) {
+    bar.classList.remove('hidden');
+    btn.style.background = 'rgba(124,58,237,0.22)';
+    btn.style.color = 'var(--accent)';
+    setTimeout(() => document.getElementById('msgSearchInput').focus(), 80);
+  } else {
+    closeMsgSearch();
+  }
+}
+
+function closeMsgSearch() {
+  document.getElementById('msgSearchBar').classList.add('hidden');
+  document.getElementById('msgSearchInput').value = '';
+  document.getElementById('searchHeaderBtn').style.background = '';
+  document.getElementById('searchHeaderBtn').style.color = '';
+  clearSearchHighlights();
+  searchMatches = []; searchIdx = -1;
+  document.getElementById('msgSearchCount').textContent = '';
+}
+
+function doMsgSearch(query) {
+  clearSearchHighlights();
+  searchMatches = []; searchIdx = -1;
+
+  const qTrim = query.trim();
+  if (!qTrim) { document.getElementById('msgSearchCount').textContent = ''; return; }
+
+  const qNorm = normalizeVi(qTrim);
+  const bubbles = document.querySelectorAll('#messagesArea .msg-bubble');
+
+  bubbles.forEach(bubble => {
+    const text = bubble.innerText || bubble.textContent;
+    const textNorm = normalizeVi(text);
+    if (textNorm.includes(qNorm)) {
+      searchMatches.push(bubble);
+    }
+  });
+
+  if (searchMatches.length === 0) {
+    document.getElementById('msgSearchCount').textContent = 'Không tìm thấy';
+    return;
+  }
+
+  // Highlight all matches
+  searchMatches.forEach(bubble => {
+    // Save original to restore later
+    if (!originalHTML.has(bubble)) originalHTML.set(bubble, bubble.innerHTML);
+    bubble.innerHTML = highlightText(bubble.innerHTML, qTrim, qNorm);
+  });
+
+  searchIdx = 0;
+  focusSearchResult();
+}
+
+function highlightText(html, query, queryNorm) {
+  // Simple approach: parse text nodes only, highlight matches
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  walkAndHighlight(div, queryNorm);
+  return div.innerHTML;
+}
+
+function walkAndHighlight(node, qNorm) {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent;
+    const norm = normalizeVi(text);
+    if (!norm.includes(qNorm)) return;
+    // Find positions in original text
+    let result = '';
+    let i = 0, ni = 0;
+    while (ni < norm.length) {
+      if (norm.startsWith(qNorm, ni)) {
+        result += '<mark class="msg-highlight">' + escHtml(text.slice(i, i + qNorm.length)) + '</mark>';
+        i += qNorm.length; ni += qNorm.length;
+      } else {
+        result += escHtml(text[i]); i++; ni++;
+      }
+    }
+    result += escHtml(text.slice(i));
+    const span = document.createElement('span');
+    span.innerHTML = result;
+    node.parentNode.replaceChild(span, node);
+  } else {
+    Array.from(node.childNodes).forEach(child => walkAndHighlight(child, qNorm));
+  }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearSearchHighlights() {
+  originalHTML.forEach((html, bubble) => {
+    if (document.contains(bubble)) bubble.innerHTML = html;
+  });
+  originalHTML.clear();
+  document.querySelectorAll('.msg-search-focused').forEach(el => el.classList.remove('msg-search-focused'));
+}
+
+function focusSearchResult() {
+  document.querySelectorAll('.msg-search-focused').forEach(el => el.classList.remove('msg-search-focused'));
+  if (searchMatches.length === 0) return;
+  const bubble = searchMatches[searchIdx];
+  bubble.classList.add('msg-search-focused');
+  bubble.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('msgSearchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
+}
+
+function navigateSearch(dir) {
+  if (searchMatches.length === 0) return;
+  searchIdx = (searchIdx + dir + searchMatches.length) % searchMatches.length;
+  focusSearchResult();
+}
+
+function msgSearchKey(e) {
+  if (e.key === 'Enter') navigateSearch(e.shiftKey ? -1 : 1);
+  if (e.key === 'Escape') closeMsgSearch();
+}
+
+// =================== CONTEXT MENU ===================
+let ctxChatId = null, ctxChatName = null;
+
+function showCtxMenu(e, chatId, chatName) {
+  e.preventDefault();
+  ctxChatId = chatId; ctxChatName = chatName;
+  const menu = document.getElementById('ctxMenu');
+  menu.classList.add('visible');
+  // Position
+  const x = Math.min(e.clientX, window.innerWidth - 200);
+  const y = Math.min(e.clientY, window.innerHeight - 120);
+  menu.style.left = x + 'px';
+  menu.style.top  = y + 'px';
+}
+
+function hideCtxMenu() {
+  document.getElementById('ctxMenu').classList.remove('visible');
+}
+
+function ctxOpenChat() {
+  hideCtxMenu();
+  if (!ctxChatId) return;
+  const el = document.getElementById('chat-' + ctxChatId);
+  if (el) el.click();
+}
+
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('ctxMenu').contains(e.target)) hideCtxMenu();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideCtxMenu(); });
+
+// =================== DELETE CONVERSATION ===================
+let deletingChatId = null;
+
+function confirmDeleteChat() {
+  hideCtxMenu();
+  if (!ctxChatId) return;
+  deletingChatId = ctxChatId;
+  document.getElementById('delChatName').textContent = ctxChatName || ctxChatId;
+  document.getElementById('delConfirmModal').classList.add('active');
+}
+
+function closeDelConfirm() {
+  document.getElementById('delConfirmModal').classList.remove('active');
+  deletingChatId = null;
+}
+
+function doDeleteChat() {
+  if (!deletingChatId) return;
+  const el = document.getElementById('chat-' + deletingChatId);
+  if (el) {
+    el.style.transition = 'all .3s';
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(-30px)';
+    setTimeout(() => {
+      el.remove();
+      // If it was the active chat, clear messages area
+      if (currentChat && currentChat.id === deletingChatId) {
+        document.getElementById('messagesArea').innerHTML = '<div class="date-divider">Cuộc trò chuyện đã bị xóa</div>';
+        document.getElementById('chatHeaderName').textContent = 'Chọn cuộc trò chuyện';
+      }
+    }, 300);
+    showToast('🗑️ Đã xóa cuộc trò chuyện');
+  }
+  closeDelConfirm();
+}
+
+// =================== ANNOUNCE CHANNEL ===================
+function updateInputBarForChat(chatId) {
+  const inputBar = document.querySelector('.input-bar');
+  const lockBar  = document.getElementById('announceLockBar');
+  if (!inputBar || !lockBar) return;
+  if (chatId === 'announce' && !isAdmin) {
+    inputBar.classList.add('readonly');
+    lockBar.classList.add('show');
+  } else {
+    inputBar.classList.remove('readonly');
+    lockBar.classList.remove('show');
+  }
+}
+let isCamOn = true;
+let callTimerInterval = null;
+let callSeconds = 0;
+let pendingFile = null;
+let typingTimeout = null;
+let isTyping = false;
+
+const STUN = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// =================== AUTH SYSTEM ===================
+// User "database" in localStorage
+function getUsers() { try{ return JSON.parse(localStorage.getItem('cg_users')||'{}'); }catch(e){return{};} }
+function saveUsers(u){ localStorage.setItem('cg_users',JSON.stringify(u)); }
+
+let authState = {
+  mode: 'login',       // login|register|otp|forgot|reset|success
+  pendingEmail: '',
+  pendingName: '',
+  pendingPw: '',
+  otpCode: '',
+  otpPurpose: '',      // 'register' | 'reset'
+  otpCountdownTimer: null,
+};
+
+// ── Particle generator ──
+function spawnParticles() {
+  const container = document.getElementById('loginParticles');
+  if (!container) return;
+  const colors = ['#7c3aed','#a855f7','#ec4899','#06b6d4','#f59e0b','#22c55e'];
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 6 + 2;
+    const left  = Math.random() * 100;
+    const dur   = Math.random() * 12 + 8;
+    const delay = Math.random() * 12;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    p.style.cssText = `left:${left}%;width:${size}px;height:${size}px;background:${color};animation-duration:${dur}s;animation-delay:${delay}s;box-shadow:0 0 ${size*2}px ${color}`;
+    container.appendChild(p);
+  }
+}
+spawnParticles();
+
+// ── Bottom bar countdown ──
+function updateLbbCountdown() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + ((7 - now.getDay() + 0) % 7 || 7));
+  next.setHours(19,0,0,0);
+  const diff = next - now;
+  const d = Math.floor(diff/86400000);
+  const h = Math.floor((diff%86400000)/3600000);
+  const m = Math.floor((diff%3600000)/60000);
+  const el = (id,v) => { const e=document.getElementById(id); if(e) e.textContent=String(v).padStart(2,'0'); };
+  el('lbbDays',d); el('lbbHrs',h); el('lbbMin',m);
+  el('cdDays',d);  el('cdHrs',h);  el('cdMin',m);
+}
+updateLbbCountdown();
+setInterval(updateLbbCountdown,30000);
+
+// ── Tab switching ──
+function switchAuthTab(mode) {
+  authState.mode = mode;
+  // Tab buttons
+  document.getElementById('tabLoginBtn').classList.toggle('active',   mode==='login');
+  document.getElementById('tabRegisterBtn').classList.toggle('active', mode==='register');
+  // Tab buttons visible only for login/register
+  document.querySelector('.auth-tabs').style.visibility =
+    (mode==='otp'||mode==='forgot'||mode==='reset'||mode==='success') ? 'hidden' : 'visible';
+
+  // Panel titles
+  const titles = {
+    login:'Chào mừng trở lại!', register:'Tạo tài khoản mới',
+    otp:'Xác Thực OTP', forgot:'Quên Mật Khẩu', reset:'Đặt Lại Mật Khẩu', success:'Hoàn Tất!'
+  };
+  document.getElementById('authCardTitle').textContent = titles[mode]||'';
+
+  // Show correct panel
+  ['Login','Register','Otp','Forgot','Reset','Success'].forEach(p => {
+    const el = document.getElementById('panel'+p);
+    if(el) el.classList.toggle('active', p.toLowerCase()===mode);
+  });
+
+  // Clear errors
+  document.querySelectorAll('.auth-error').forEach(e=>e.classList.remove('show'));
+}
+
+// ── Password visibility toggle ──
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── Password strength ──
+function checkPwStrength(pw) {
+  const bars = ['pb1','pb2','pb3','pb4'];
+  const label = document.getElementById('pwLabel');
+  bars.forEach(id=>{ const el=document.getElementById(id); if(el){el.className='pw-bar';} });
+  if (!pw) { if(label) label.textContent='Nhập mật khẩu'; return; }
+  let strength = 0;
+  if(pw.length>=6) strength++;
+  if(pw.length>=10) strength++;
+  if(/[A-Z]/.test(pw)||/[0-9]/.test(pw)) strength++;
+  if(/[^A-Za-z0-9]/.test(pw)) strength++;
+  const cls = ['','weak','fair','strong','strong'];
+  const labels = ['','Yếu','Trung bình','Mạnh','Rất mạnh'];
+  for(let i=0;i<strength;i++){
+    const el=document.getElementById(bars[i]);
+    if(el) el.classList.add(cls[strength]);
+  }
+  if(label) label.textContent = labels[strength];
+}
+
+// ── Error helpers ──
+function showErr(id,msg) {
+  const el=document.getElementById(id);
+  if(!el) return;
+  if(msg) el.textContent=msg;
+  el.classList.add('show');
+}
+function hideErr(id){ const el=document.getElementById(id); if(el) el.classList.remove('show'); }
+
+// ── OTP generator (client-side demo — in real app this is server-generated) ──
+function generateOTP() {
+  return String(Math.floor(100000+Math.random()*900000));
+}
+
+// ── Generate OTP & "send email" ──
+function sendOTP(email, purpose) {
+  authState.otpCode = generateOTP();
+  authState.otpPurpose = purpose;
+  authState.pendingEmail = email;
+  // Simulate email send (in real app: POST /api/send-otp)
+  console.log(`[OTP DEMO] Code for ${email}: ${authState.otpCode}`);
+  showToast(`📩 Mã OTP: ${authState.otpCode} (demo - check console)`, 5000);
+  startOtpCountdown(120);
+}
+
+function startOtpCountdown(seconds) {
+  clearInterval(authState.otpCountdownTimer);
+  let s = seconds;
+  const link = document.getElementById('resendLink');
+  const cd   = document.getElementById('otpCountdown');
+  if(link) { link.classList.add('disabled'); }
+  authState.otpCountdownTimer = setInterval(() => {
+    s--;
+    if(cd) cd.textContent = ` (${Math.floor(s/60)}:${String(s%60).padStart(2,'0')})`;
+    if(s<=0){
+      clearInterval(authState.otpCountdownTimer);
+      if(cd) cd.textContent='';
+      if(link){ link.classList.remove('disabled'); }
+    }
+  }, 1000);
+}
+
+function resendOTP() {
+  const link = document.getElementById('resendLink');
+  if(link && link.classList.contains('disabled')) return;
+  sendOTP(authState.pendingEmail, authState.otpPurpose);
+}
+
+// ── OTP input navigation ──
+function otpInput(index, el) {
+  const v = el.value.replace(/\D/g,'');
+  el.value = v;
+  el.classList.toggle('filled', v.length>0);
+  if(v && index < 5) {
+    document.getElementById('otp'+(index+1)).focus();
+  }
+  // Auto verify when all 6 filled
+  const code = Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');
+  if(code.length===6) setTimeout(verifyOTP, 200);
+}
+function otpKeydown(index, e) {
+  if(e.key==='Backspace' && !e.target.value && index>0) {
+    document.getElementById('otp'+(index-1)).focus();
+  }
+}
+function clearOtpBoxes() {
+  for(let i=0;i<6;i++){
+    const el=document.getElementById('otp'+i);
+    if(el){el.value='';el.classList.remove('filled');}
+  }
+  if(document.getElementById('otp0')) document.getElementById('otp0').focus();
+}
+
+// ── LOGIN ──
+function doLogin() {
+  const identifier = document.getElementById('loginId').value.trim();
+  const pw         = document.getElementById('loginPw').value;
+  hideErr('loginIdErr'); hideErr('loginPwErr');
+  if(!identifier){ showErr('loginIdErr','Vui lòng nhập tên hoặc email'); return; }
+  if(!pw){ showErr('loginPwErr','Vui lòng nhập mật khẩu'); return; }
+
+  const btn=document.getElementById('loginBtn');
+  btn.disabled=true;
+  btn.innerHTML='<span class="auth-spinner"></span>Đang đăng nhập...';
+
+  setTimeout(()=>{
+    const users=getUsers();
+    // Find by username or email
+    const user = Object.values(users).find(u=>
+      (u.username===identifier || u.email===identifier) && u.password===pw
+    );
+    btn.disabled=false; btn.innerHTML='ĐĂNG NHẬP';
+    if(!user){
+      showErr('loginPwErr','Tên đăng nhập hoặc mật khẩu không đúng');
+      document.getElementById('loginId').classList.add('error');
+      document.getElementById('loginPw').classList.add('error');
+      setTimeout(()=>{
+        document.getElementById('loginId').classList.remove('error');
+        document.getElementById('loginPw').classList.remove('error');
+      },2000);
+      return;
+    }
+    isAdmin = !!(user.isAdmin || user.username === ADMIN_USERNAME);
+    myUsername = user.displayName || user.username;
+    myRoom = 'lobby';
+    showSuccess('Đăng Nhập Thành Công! 🏆', `Chào mừng trở lại, ${myUsername}!`);
+  }, 900);
+}
+
+// ── REGISTER ──
+function doRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pw    = document.getElementById('regPw').value;
+  const pw2   = document.getElementById('regPw2').value;
+
+  hideErr('regNameErr'); hideErr('regEmailErr'); hideErr('regPwErr'); hideErr('regPw2Err');
+
+  if(name.length<2){ showErr('regNameErr'); return; }
+  if(!email||!/^\S+@\S+\.\S+$/.test(email)){ showErr('regEmailErr'); return; }
+  if(pw.length<6){ showErr('regPwErr'); return; }
+  if(pw!==pw2){ showErr('regPw2Err'); return; }
+
+  const users = getUsers();
+  if(Object.values(users).find(u=>u.email===email)){
+    showErr('regEmailErr','Email này đã được đăng ký');
+    return;
+  }
+
+  authState.pendingName = name;
+  authState.pendingEmail = email;
+  authState.pendingPw = pw;
+
+  const btn=document.getElementById('regBtn');
+  btn.disabled=true; btn.innerHTML='<span class="auth-spinner"></span>Đang gửi mã...';
+
+  setTimeout(()=>{
+    btn.disabled=false; btn.innerHTML='ĐĂNG KÝ';
+    sendOTP(email,'register');
+    document.getElementById('otpEmailDisplay').textContent=email;
+    clearOtpBoxes();
+    switchAuthTab('otp');
+  }, 800);
+}
+
+// ── VERIFY OTP ──
+function verifyOTP() {
+  const entered = Array.from({length:6},(_,i)=>document.getElementById('otp'+i).value).join('');
+  if(entered.length<6){ showErr('otpErr','Vui lòng nhập đủ 6 số'); return; }
+
+  const btn=document.getElementById('otpBtn');
+  btn.disabled=true; btn.innerHTML='<span class="auth-spinner"></span>Đang xác thực...';
+
+  setTimeout(()=>{
+    btn.disabled=false; btn.innerHTML='XÁC NHẬN';
+    // In real app: verify against server. Here we check client-side demo code
+    if(entered !== authState.otpCode){
+      showErr('otpErr');
+      // Shake boxes
+      document.querySelectorAll('.otp-box').forEach(b=>{ b.style.animation='none'; setTimeout(()=>b.style.animation='',10); });
+      clearOtpBoxes();
+      return;
+    }
+    hideErr('otpErr');
+    clearInterval(authState.otpCountdownTimer);
+
+    if(authState.otpPurpose==='register'){
+      // Save user
+      const users=getUsers();
+      const username = authState.pendingEmail.split('@')[0].replace(/[^a-z0-9]/gi,'');
+      users[authState.pendingEmail] = {
+        username, displayName: authState.pendingName,
+        email: authState.pendingEmail, password: authState.pendingPw,
+        createdAt: new Date().toISOString()
+      };
+      saveUsers(users);
+      myUsername = authState.pendingName;
+      myRoom = 'lobby';
+      showSuccess('Đăng Ký Thành Công! 🎉', `Chào mừng ${myUsername} đến với Crust & Goal!`);
+    } else if(authState.otpPurpose==='reset'){
+      switchAuthTab('reset');
+    }
+  }, 900);
+}
+
+// ── FORGOT PASSWORD ──
+function doForgotPassword() {
+  const email=document.getElementById('forgotEmail').value.trim();
+  hideErr('forgotEmailErr');
+  if(!email||!/^\S+@\S+\.\S+$/.test(email)){ showErr('forgotEmailErr'); return; }
+  const users=getUsers();
+  if(!Object.values(users).find(u=>u.email===email)){
+    showErr('forgotEmailErr','Email này chưa được đăng ký');
+    return;
+  }
+  sendOTP(email,'reset');
+  document.getElementById('otpEmailDisplay').textContent=email;
+  clearOtpBoxes();
+  switchAuthTab('otp');
+}
+
+// ── RESET PASSWORD ──
+function doResetPassword() {
+  const pw  = document.getElementById('newPw').value;
+  const pw2 = document.getElementById('newPw2').value;
+  hideErr('resetErr');
+  if(pw.length<6){ showErr('resetErr','Mật khẩu cần ít nhất 6 ký tự'); return; }
+  if(pw!==pw2){ showErr('resetErr'); return; }
+  const users=getUsers();
+  const user=Object.values(users).find(u=>u.email===authState.pendingEmail);
+  if(user){ user.password=pw; saveUsers(users); }
+  showSuccess('Đặt Lại Thành Công! 🔐', 'Mật khẩu của bạn đã được cập nhật. Hãy đăng nhập lại.');
+  setTimeout(()=>switchAuthTab('login'),2000);
+}
+
+// ── SOCIAL LOGIN ──
+function socialLogin(provider) {
+  showToast(`${provider} login đang được tích hợp...`);
+  // Demo: auto-login with social username
+  setTimeout(()=>{
+    myUsername = `User_${provider}`;
+    myRoom = 'lobby';
+    showSuccess('Đăng Nhập Thành Công! 🏆', `Đăng nhập bằng ${provider} thành công!`);
+  }, 1200);
+}
+
+// ── SHOW SUCCESS ──
+function showSuccess(title, sub) {
+  document.getElementById('successTitle').textContent = title;
+  document.getElementById('successSub').textContent = sub;
+  switchAuthTab('success');
+}
+
+// ── ENTER APP ──
+function enterApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'grid';
+  // Update sidebar avatar/name
+  const navLabelEls = document.querySelectorAll('.online-label');
+  navLabelEls.forEach(el=>el.textContent='ONLINE');
+  applyAdminUI();
+  initSocket();
+}
+
+// ── LEGACY doLogin alias (socket already uses myUsername) ──
+// Replaced below — keep this for Enter key compat
+
+// =================== SOCKET ===================
+function initSocket() {
+  try {
+    socket = io();
+    socket.on('connect', () => {
+      socket.emit('join', { username: myUsername, room: myRoom });
+      showToast('Đã kết nối ✓');
+    });
+    socket.on('message', (msg) => {
+      if (msg.senderId !== socket.id) renderMessage(msg, false);
+    });
+    socket.on('typing', ({ username }) => {
+      if (username !== myUsername) showTyping(username);
+    });
+    socket.on('stop-typing', () => hideTyping());
+    socket.on('user-joined', ({ username }) => {
+      if (username !== myUsername) showToast(username + ' đã tham gia');
+    });
+    socket.on('user-left', ({ username }) => showToast(username + ' đã rời phòng'));
+    socket.on('incoming-call', async ({ from, signal, callType, fromId }) => {
+      currentCallPeer = fromId;
+      isVideo = callType === 'video';
+      document.getElementById('callCallerName').textContent = from || 'Ai đó';
+      document.getElementById('callType').textContent = isVideo ? '📹 Gọi video đến...' : '📞 Gọi thoại đến...';
+      document.getElementById('callModal').classList.add('active');
+      window._incomingSignal = signal;
+    });
+    socket.on('call-accepted', async ({ signal }) => {
+      callAccepted = true;
+      if (peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(signal));
+        showCallUI();
+      }
+    });
+    socket.on('call-rejected', () => { showToast('Cuộc gọi bị từ chối'); cleanupCall(); });
+    socket.on('call-ended', () => { showToast('Cuộc gọi đã kết thúc'); cleanupCall(); });
+    socket.on('ice-candidate', async ({ candidate }) => {
+      if (peerConnection && candidate) {
+        try { await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e) {}
+      }
+    });
+  } catch(e) { showToast('Chạy offline - không có server'); }
+}
+
+// =================== CHAT ===================
+function openChat(id, name, avatar) {
+  document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
+  const el = document.getElementById('chat-' + id);
+  if (el) el.classList.add('active');
+  currentChat = { id, name, avatar };
+  document.getElementById('chatHeaderName').textContent = name;
+  document.getElementById('chatHeaderAvatar').src = avatar || 'https://i.pravatar.cc/150?img=5';
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('profileAvatar').src = avatar || 'https://i.pravatar.cc/150?img=5';
+  document.getElementById('fsCallerName').textContent = name;
+  updateInputBarForChat(id);
+  // Close search if open
+  closeMsgSearch();
+}
+
+function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const text = input.value.trim();
+  if (!text && !pendingFile) return;
+  if (pendingFile) { uploadAndSend(text); return; }
+  const msg = {
+    id: Date.now(), sender: myUsername,
+    senderId: socket ? socket.id : 'local',
+    text, type: 'text',
+    timestamp: new Date().toISOString(), room: myRoom
+  };
+  renderMessage(msg, true);
+  if (socket) socket.emit('message', { text, type: 'text', room: myRoom });
+  input.value = '';
+  stopTyping();
+}
+
+async function uploadAndSend(text) {
+  const formData = new FormData();
+  formData.append('file', pendingFile);
+  try {
+    const res = await fetch('/upload', { method: 'POST', body: formData });
+    const fileData = await res.json();
+    const msg = {
+      id: Date.now(), sender: myUsername,
+      senderId: socket ? socket.id : 'local',
+      text: text || '', type: 'file', file: fileData,
+      timestamp: new Date().toISOString(), room: myRoom
+    };
+    renderMessage(msg, true);
+    if (socket) socket.emit('message', { text, type: 'file', file: fileData, room: myRoom });
+  } catch(e) { showToast('Tải lên thất bại'); }
+  removeFile();
+  document.getElementById('messageInput').value = '';
+}
+
+function renderMessage(msg, isSent) {
+  const area = document.getElementById('messagesArea');
+  const row = document.createElement('div');
+  row.className = 'msg-row' + (isSent ? ' sent' : '');
+  const avatar = isSent ? '' : `<div class="msg-avatar"><img src="${currentChat.avatar || 'https://i.pravatar.cc/150?img=5'}" onerror="this.style.display='none'" alt=""></div>`;
+  let content = '';
+  if (msg.type === 'file' && msg.file) {
+    const isImg = msg.file.mimetype && msg.file.mimetype.startsWith('image/');
+    if (isImg) {
+      content = `<img src="${msg.file.url}" style="max-width:200px;border-radius:10px;display:block">`;
+    } else {
+      content = `<div class="file-msg"><div class="file-icon">${getFileIcon(msg.file.mimetype)}</div><div class="file-info"><div class="file-name">${msg.file.originalname}</div><div class="file-size">${formatSize(msg.file.size)}</div></div><a href="${msg.file.url}" download class="file-download">⬇</a></div>`;
+    }
+    if (msg.text) content = `<div>${msg.text}</div>` + content;
+  } else {
+    content = msg.text;
+  }
+  const time = new Date(msg.timestamp).toLocaleTimeString('vi',{hour:'2-digit',minute:'2-digit'});
+  const checkmark = isSent ? '<span class="check-icon">✓✓</span>' : '';
+  if (isSent) {
+    row.innerHTML = `<div><div class="msg-bubble">${content}</div><div class="msg-time">${time} ${checkmark}</div></div>`;
+  } else {
+    row.innerHTML = `${avatar}<div><div class="msg-bubble">${content}</div><div class="msg-time">${time}</div></div>`;
+  }
+  area.appendChild(row);
+  area.scrollTop = area.scrollHeight;
+}
+
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function handleTyping() {
+  if (!socket) return;
+  if (!isTyping) { isTyping = true; socket.emit('typing', { room: myRoom, username: myUsername }); }
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(stopTyping, 2000);
+}
+function stopTyping() {
+  if (isTyping && socket) { isTyping = false; socket.emit('stop-typing', { room: myRoom }); }
+}
+function showTyping(name) {
+  let ti = document.getElementById('typingIndicator');
+  if (!ti) { ti = document.createElement('div'); ti.id = 'typingIndicator'; ti.className = 'typing-indicator'; document.getElementById('messagesArea').appendChild(ti); }
+  ti.innerHTML = name + ' đang nhập... <div class="typing-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('messagesArea').scrollTop = 99999;
+}
+function hideTyping() { const ti = document.getElementById('typingIndicator'); if (ti) ti.remove(); }
+
+// =================== FILE ===================
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  pendingFile = file;
+  document.getElementById('filePreviewName').textContent = file.name;
+  document.getElementById('filePreviewBar').classList.add('show');
+}
+function removeFile() {
+  pendingFile = null;
+  document.getElementById('filePreviewBar').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+}
+function getFileIcon(mime) {
+  if (!mime) return '📎';
+  if (mime.startsWith('image/')) return '🖼️';
+  if (mime.startsWith('video/')) return '🎥';
+  if (mime.startsWith('audio/')) return '🎵';
+  if (mime.includes('pdf')) return '📄';
+  if (mime.includes('word') || mime.includes('document')) return '📝';
+  if (mime.includes('sheet') || mime.includes('excel')) return '📊';
+  return '📎';
+}
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+// =================== WEBRTC ===================
+async function startVideoCall() {
+  if (!socket) { showToast('Chưa kết nối máy chủ'); return; }
+  isVideo = true; await initCall();
+}
+async function startVoiceCall() {
+  if (!socket) { showToast('Chưa kết nối máy chủ'); return; }
+  isVideo = false; await initCall();
+}
+async function initCall() {
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+    setupLocalVideo();
+    peerConnection = createPeerConnection();
+    localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('call-user', { to: 'broadcast', from: myUsername, signal: offer, callType: isVideo ? 'video' : 'audio' });
+    showToast(isVideo ? '📹 Đang gọi video...' : '📞 Đang gọi thoại...');
+    showCallUI();
+  } catch(e) { showToast('Không thể truy cập camera/microphone: ' + e.message); }
+}
+function createPeerConnection() {
+  const pc = new RTCPeerConnection(STUN);
+  pc.onicecandidate = e => { if (e.candidate && socket && currentCallPeer) socket.emit('ice-candidate', { to: currentCallPeer, candidate: e.candidate }); };
+  pc.ontrack = e => {
+    if (e.streams[0]) {
+      document.getElementById('remoteVideo').srcObject = e.streams[0];
+      document.getElementById('fsRemoteVideo').srcObject = e.streams[0];
+    }
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'connected') {
+      document.getElementById('videoFullscreen').querySelector('.vfs-call-status span:last-child').textContent = 'Đang kết nối · ' + currentChat.name;
+      startCallTimer();
+    }
+  };
+  return pc;
+}
+function setupLocalVideo() {
+  document.getElementById('localVideo').srcObject = localStream;
+  document.getElementById('fsLocalVideo').srcObject = localStream;
+}
+async function acceptCall() {
+  document.getElementById('callModal').classList.remove('active');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: isVideo, audio: true });
+    setupLocalVideo();
+    peerConnection = createPeerConnection();
+    localStream.getTracks().forEach(t => peerConnection.addTrack(t, localStream));
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(window._incomingSignal));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('call-accepted', { to: currentCallPeer, signal: answer });
+    showCallUI();
+  } catch(e) { showToast('Lỗi: ' + e.message); }
+}
+function rejectCall() {
+  document.getElementById('callModal').classList.remove('active');
+  if (socket && currentCallPeer) socket.emit('call-rejected', { to: currentCallPeer });
+  currentCallPeer = null;
+}
+function showCallUI() {
+  document.getElementById('videoWidget').style.display = 'block';
+  document.getElementById('videoFullscreen').classList.add('active');
+  startCallTimer();
+}
+function endCall() {
+  if (socket && currentCallPeer) socket.emit('end-call', { to: currentCallPeer });
+  cleanupCall();
+}
+function cleanupCall() {
+  if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  if (peerConnection) { peerConnection.close(); peerConnection = null; }
+  currentCallPeer = null; callAccepted = false;
+  document.getElementById('videoWidget').style.display = 'none';
+  document.getElementById('videoFullscreen').classList.remove('active');
+  document.getElementById('callModal').classList.remove('active');
+  clearInterval(callTimerInterval); callSeconds = 0;
+  document.getElementById('callTimer').textContent = '00:00';
+}
+function startCallTimer() {
+  clearInterval(callTimerInterval);
+  callTimerInterval = setInterval(() => {
+    callSeconds++;
+    const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
+    const s = String(callSeconds%60).padStart(2,'0');
+    document.getElementById('callTimer').textContent = m+':'+s;
+  }, 1000);
+}
+function toggleMic() {
+  isMicOn = !isMicOn;
+  if (localStream) localStream.getAudioTracks().forEach(t => t.enabled = isMicOn);
+  const btn = document.getElementById('fsMicBtn');
+  const label = document.getElementById('fsMicLabel');
+  btn.style.background = isMicOn ? 'rgba(255,255,255,0.18)' : 'rgba(239,68,68,0.7)';
+  if (label) label.textContent = isMicOn ? 'Tắt mic' : 'Bật mic';
+  showToast(isMicOn ? 'Mic đã bật' : 'Mic đã tắt');
+}
+function toggleCam() {
+  isCamOn = !isCamOn;
+  if (localStream) localStream.getVideoTracks().forEach(t => t.enabled = isCamOn);
+  const btn = document.getElementById('fsCamBtn');
+  const label = document.getElementById('fsCamLabel');
+  btn.style.background = isCamOn ? 'rgba(255,255,255,0.18)' : 'rgba(239,68,68,0.7)';
+  if (label) label.textContent = isCamOn ? 'Tắt video' : 'Bật video';
+  showToast(isCamOn ? 'Camera đã bật' : 'Camera đã tắt');
+}
+function flipCamera() { showToast('Đổi camera...'); }
+function toggleFullscreenMode() {
+  document.getElementById('videoFullscreen').classList.toggle('active');
+}
+
+// =================== UI HELPERS ===================
+function setTab(btn, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function filterChats() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.chat-item').forEach(item => {
+    const name = item.querySelector('.chat-name')?.textContent.toLowerCase() || '';
+    item.style.display = name.includes(q) ? '' : 'none';
+  });
+}
+function startNewChat() {
+  showToast('Tính năng tìm kiếm người dùng đang phát triển!');
+}
+function toggleVoice(btn) {
+  const isPlaying = btn.textContent === '⏸';
+  btn.textContent = isPlaying ? '▶' : '⏸';
+  const bars = btn.closest('.voice-msg').querySelectorAll('.voice-bar');
+  bars.forEach(b => {
+    b.style.animationPlayState = isPlaying ? 'paused' : 'running';
+    b.style.background = isPlaying ? 'rgba(200,170,255,0.4)' : 'rgba(200,170,255,0.7)';
+  });
+}
+
+// =================== VOICE TO TEXT ===================
+let recognition = null;
+let isListening = false;
+
+function toggleRecording() {
+  const btn = document.getElementById('micBtn');
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { showToast('Trình duyệt không hỗ trợ nhận giọng nói 😢'); return; }
+  if (isListening) { recognition.stop(); return; }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'vi-VN';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  const input = document.getElementById('messageInput');
+  const overlay = document.getElementById('voiceOverlay');
+  const voiceText = document.getElementById('voiceText');
+
+  recognition.onstart = () => {
+    isListening = true;
+    btn.classList.add('recording');
+    overlay.classList.add('active');
+    voiceText.textContent = '🎙️ Đang nghe...';
+    input.placeholder = '🎙️ Đang lắng nghe...';
+  };
+  recognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t; else interim += t;
+    }
+    voiceText.textContent = final || interim || '🎙️ Đang nghe...';
+    input.value = final || interim;
+  };
+  recognition.onend = () => {
+    isListening = false;
+    btn.classList.remove('recording');
+    overlay.classList.remove('active');
+    input.placeholder = 'Nhập tin nhắn...';
+    const text = input.value.trim();
+    if (text) setTimeout(() => sendMessage(), 300);
+  };
+  recognition.onerror = (e) => {
+    isListening = false;
+    btn.classList.remove('recording');
+    overlay.classList.remove('active');
+    input.placeholder = 'Nhập tin nhắn...';
+    if (e.error === 'no-speech') showToast('Không nghe thấy giọng nói 🤔');
+    else if (e.error === 'not-allowed') showToast('Cần cấp quyền microphone 🎤');
+    else showToast('Lỗi nhận giọng nói: ' + e.error);
+  };
+  recognition.start();
+}
+
+function toggleEmoji() {
+  const emojis = ['😀','😍','🏆','⚽','🍞','🔥','❤️','✨','👏','🙌'];
+  const input = document.getElementById('messageInput');
+  input.value += emojis[Math.floor(Math.random()*emojis.length)];
+  input.focus();
+}
+
+function showToast(msg, duration) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration || 2500);
+}
+
+// =================== CLOCK IN CALL ===================
+function updateVfsClock() {
+  const el = document.getElementById('vfsClock');
+  if (el) el.textContent = new Date().toLocaleTimeString('vi',{hour:'2-digit',minute:'2-digit'});
+}
+updateVfsClock();
+setInterval(updateVfsClock, 10000);
+
+// Enter key support for login/register panels
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  const mode = authState.mode;
+  if (mode === 'login') doLogin();
+  else if (mode === 'register') doRegister();
+  else if (mode === 'forgot') doForgotPassword();
+});
+
+// =================== COUNTDOWN ===================
+function updateCountdown() {
+  const now = new Date();
+  const next = new Date(now);
+  next.setDate(now.getDate() + ((7 - now.getDay() + 0) % 7 || 7));
+  next.setHours(19, 0, 0, 0);
+  const diff = next - now;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  document.getElementById('cdDays').textContent = String(d).padStart(2,'0');
+  document.getElementById('cdHrs').textContent = String(h).padStart(2,'0');
+  document.getElementById('cdMin').textContent = String(m).padStart(2,'0');
+}
+// Countdown already handled above in auth system
+updateCountdown();
+setInterval(updateCountdown, 30000);
+</script>
+</body>
+</html>
